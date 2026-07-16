@@ -1,4 +1,8 @@
-from exact_posterior import exact_posterior, sample_exact_posterior
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from posterior import exact_posterior, sample_exact_posterior
 from prior import UniformPrior
 from inference import abc_function
 from simulators import simulate_exponential_decay, simulate_linear_regression
@@ -47,15 +51,12 @@ def linear_regression_experiment():
 
     # Get the exact posterior estimates
     mu_n, sigma_n = exact_posterior(x, observed_data, NOISE_SD)
-    exact_samples = sample_exact_posterior(mu_n, sigma_n, n_samples=len(accepted_parameters)) # match the number of samples to the number of accepted samples from ABC
+    exact_samples = sample_exact_posterior(mu_n, sigma_n, n_samples=len(accepted_parameters))
 
     # Plotting the results
     plot_observed_data(x, observed_data, TRUE_INTERCEPT, TRUE_SLOPE)
     plot_posterior(accepted_parameters, true_theta)
     plot_comparison(accepted_parameters, exact_samples, TRUE_INTERCEPT, TRUE_SLOPE)
-
-    # Save data
-    np.savetxt("data/observed_linear.csv", observed_data)
 
 def exponential_decay_experiment():
 

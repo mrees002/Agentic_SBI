@@ -1,14 +1,15 @@
 import numpy as np
 
-def exact_posterior(x, y, noise_sd):
+def exact_posterior(x, y, noise_sd, prior):
 
     """
-    Computers the exact posterior distribution for a linear regression model with Gaussian noise.
+    Computes the exact posterior distribution for a linear regression model with Gaussian noise.
 
     Parameters:
     x: array of x values
     y: array of observed y values
     noise_sd: standard deviation of the Gaussian noise
+    prior: a GaussianPrior instance, providing means and stds for intercept and slope
 
     Returns:
     mu_n: posterior mean of the parameters (intercept and slope)
@@ -18,9 +19,10 @@ def exact_posterior(x, y, noise_sd):
     # Add a column of ones to x for the intercept term to create the design matrix
     X = np.column_stack((np.ones(x.shape[0]), x))
 
-    # Define prior mean and covariance for the parameters (intercept and slope)
-    mu_0 = np.array([0, 0])
-    sigma_0 = np.diag([25, 25]) # We assume a prior variance of 25 for both parameters, which is equivalent to a standard deviation of 5
+    # Pull prior mean and covariance from the GaussianPrior object, keeping
+    # [intercept, slope] ordering consistent with X's columns
+    mu_0 = np.array([prior.means['intercept'], prior.means['slope']])
+    sigma_0 = np.diag([prior.stds['intercept'] ** 2, prior.stds['slope'] ** 2])
 
     # Calculate the posterior covariance matrix
     sigma_n = np.linalg.inv(np.linalg.inv(sigma_0) + X.T @ X / noise_sd ** 2)

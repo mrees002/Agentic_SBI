@@ -26,3 +26,29 @@ class UniformPrior:
             parameters[name] = np.random.uniform(lower, upper)
             
         return parameters
+    
+class GaussianPrior:
+
+    """
+    Samples from the gaussian prior distribution defined by the the mean and standard deviations
+
+    Parameters:
+    mean: a dictionary of means of the parameters
+    std: a dictionary of standard deviations of the parameters
+
+    Returns:
+    dict: parameter names and their sampled values
+    """
+
+    def __init__(self, mean, std):
+        self.means = mean
+        self.stds = std
+
+    def sample(self):
+        parameters = {}
+
+        # iterate through dictionary of means/stds and sample from Gaussian distribution for each parameter
+        for name, mean in self.means.items():
+            parameters[name] = np.random.normal(mean, self.stds[name])
+
+        return parameters
