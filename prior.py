@@ -18,7 +18,7 @@ class UniformPrior:
 
         self.bounds = bounds
     
-    def sample(self):
+    def sample(self, rng):
 
         """
         Samples from the uniform prior distribution defined by the bounds.
@@ -27,16 +27,20 @@ class UniformPrior:
         name: string of the name of the parameter to sample
         lower: float of the lower bound of the uniform distribution
         upper: float of the upper bound of the uniform distribution
+        rng: numPy generator
 
         Returns:
         dict: parameter names and their sampled values
         """
 
+        if not isinstance(rng, np.random.Generator):
+            raise TypeError("rng must be a NumPy Generator.")
+
         parameters = {}
 
         # iterate through dictionary of bounds and sample from uniform distribution for each parameter
         for name, (lower, upper) in self.bounds.items():
-            parameters[name] = np.random.uniform(lower, upper)
+            parameters[name] = rng.uniform(lower, upper)
             
         return parameters
     
@@ -59,7 +63,7 @@ class GaussianPrior:
                 )
 
 
-    def sample(self):
+    def sample(self, rng):
 
         """
         Samples from the gaussian prior distribution defined by the the mean and standard deviations
@@ -67,6 +71,7 @@ class GaussianPrior:
         Parameters:
         mean: a dictionary of means of the parameters
         std: a dictionary of standard deviations of the parameters
+        rng: numPy generator
 
         Returns:
         dict: parameter names and their sampled values
@@ -76,6 +81,6 @@ class GaussianPrior:
 
         # iterate through dictionary of means/stds and sample from Gaussian distribution for each parameter
         for name, mean in self.means.items():
-            parameters[name] = np.random.normal(mean, self.stds[name])
+            parameters[name] = rng.normal(mean, self.stds[name])
 
         return parameters
