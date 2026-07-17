@@ -1,6 +1,6 @@
 import numpy as np
 
-def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsilon, n_simulations):
+def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsilon, n_simulations, rng):
     
     """
     This function performs Approximate Bayesian Computation 
@@ -13,11 +13,15 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     distance_fn: Function to compute distance between the summary statistics of observed and simulated data
     epsilon: The threshold for accepting parameters
     n_simulations: Number of simulations to run
+    rng: numPy simulator
 
     Returns:
     accepted_parameters: List of accepted parameter sets
     accepted_distances: np array of accepted distances
     """
+
+    if not isinstance(rng, np.random.Generator):
+        raise TypeError("rng must be a NumPy Generator.")
 
     if not np.isscalar(epsilon) or not np.isfinite(epsilon):
         raise ValueError("epsilon must be a finite number.")
@@ -47,8 +51,8 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
 
     for _ in range(n_simulations):
 
-        theta = prior.sample()
-        simulated_data = simulator(theta)
+        theta = prior.sample(rng)
+        simulated_data = simulator(theta, rng)
 
         simulated_summary = np.asarray(
             summary_fn(simulated_data),
