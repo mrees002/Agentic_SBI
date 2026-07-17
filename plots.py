@@ -1,43 +1,65 @@
 import matplotlib.pyplot as plt
 
-def plot_posterior(accepted_parameters, true_values):
-    """
-    Plots posterior histograms for any set of parameters.
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def plot_posterior(accepted_parameters, true_values=None, output_path=None):
     
-    Parameters:
-    accepted_parameters: list of accepted parameter dictionaries from ABC
-    true_values: dictionary of true parameter values e.g. {"intercept": 1.0, "slope": 2.0}
-    """
-    parameter_names = list(true_values.keys())
-    n_params = len(parameter_names)
+    if len(accepted_parameters) == 0:
+        raise ValueError("No accepted samples to plot.")
 
-    plt.figure(figsize=(6 * n_params, 5))
+    parameter_names = list(accepted_parameters[0].keys())
 
-    for i, name in enumerate(parameter_names):
-        values = [p[name] for p in accepted_parameters]
-        plt.subplot(1, n_params, i + 1)
-        plt.hist(values, bins=30, density=True, alpha=0.7, color='blue')
-        plt.axvline(true_values[name], color='red', linestyle='dashed', 
-                    linewidth=2, label=f'True {name}')
-        plt.title(f'Posterior: {name}')
-        plt.xlabel(name)
-        plt.ylabel('Density')
-        plt.legend()
+    for sample in accepted_parameters:
+        if set(sample.keys()) != set(parameter_names):
+            raise ValueError(
+                "All accepted samples must contain the same parameters."
+            )
 
-    plt.tight_layout()
-    plt.savefig("results/posterior.png")
-    plt.show()
+    figure, axes = plt.subplots(
+        len(parameter_names),
+        1,
+        figsize=(7, 3 * len(parameter_names)),
+    )
+
+    if len(parameter_names) == 1:
+        axes = [axes]
+
+    for axis, name in zip(axes, parameter_names):
+        values = np.array([
+            sample[name]
+            for sample in accepted_parameters
+        ])
+
+        axis.hist(values, bins=30, density=True)
+        axis.set_title(f"Posterior for {name}")
+        axis.set_xlabel(name)
+        axis.set_ylabel("Density")
+
+        if true_values is not None and name in true_values:
+            axis.axvline(
+                true_values[name],
+                linestyle="--",
+                label="True value",
+            )
+            axis.legend()
+
+    figure.tight_layout()
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        figure.savefig(output_path)
+
+    return figure
 
 def plot_observed_data(x, observed_data, true_intercept, true_slope):
-    """
-    Plots the observed data along with the true regression line.
-    
-    Parameters:
-    x: array of x values
-    observed_data: array of observed y values
-    true_intercept: true intercept value
-    true_slope: true slope value
-    """
 
     # Plotting the observed data and true regression line
     plt.figure(figsize=(8, 6))
@@ -51,15 +73,6 @@ def plot_observed_data(x, observed_data, true_intercept, true_slope):
     plt.show()
 
 def plot_comparison(abc_parameters, exact_parameters, true_intercept, true_slope):
-    """
-    Plots the comparison of ABC and exact posterior distributions for intercept and slope.
-
-    Parameters:
-    abc_parameters: list of accepted parameter dictionaries from ABC
-    exact_parameters: dictionary containing exact posterior samples for intercept and slope
-    true_intercept: true intercept value to mark on plot
-    true_slope: true slope value to mark on plot
-    """
 
     # Plotting the comparison of ABC and exact posterior distributions for intercept and slope
     abc_intercepts = [p["intercept"] for p in abc_parameters]
