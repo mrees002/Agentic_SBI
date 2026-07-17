@@ -53,7 +53,7 @@ def simulate_exponential_decay(theta, time, noise_sd, rng):
 
     Parameters: 
     theta: dictionary of parameters with keys 'initial_amplitude' and 'decay_rate'
-    x: array of input data
+    time: array of input data
     noise_sd: standard deviation of the Gaussian noise to be added to the output
     rng: numPy generator
 
