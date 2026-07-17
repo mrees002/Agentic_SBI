@@ -9,11 +9,12 @@ def exact_linear_regression_posterior(x, y, noise_sd, prior_mean, prior_covarian
     x: array of x values
     y: array of observed y values
     noise_sd: standard deviation of the Gaussian noise
-    prior: a GaussianPrior instance, providing means and stds for intercept and slope
+    prior_mean: prior mean for intercept and slope
+    prior_covariance: 2 x 2 prior covariance matrix
 
     Returns:
-    mu_n: posterior mean of the parameters (intercept and slope)
-    sigma_n: posterior covariance matrix of the parameters
+    posterior_mean: posterior mean for intercept and slope
+    posterior_covariance: posterior covariance matrix
     """
 
     x = np.asarray(x, dtype=float)
