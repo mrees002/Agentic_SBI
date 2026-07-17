@@ -16,30 +16,56 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
 
     Returns:
     accepted_parameters: List of accepted parameter sets
+    accepted_distances: np array of accepted distances
     """
 
-    # Compute summary statistics for the observed data
-    observed_summary = summary_fn(observed_data)
+    if not np.isscalar(epsilon) or not np.isfinite(epsilon):
+        raise ValueError("epsilon must be a finite number.")
+
+    if epsilon < 0:
+        raise ValueError("epsilon must be nonnegative.")
+
+    if (
+        not isinstance(n_simulations, int)
+        or isinstance(n_simulations, bool)
+        or n_simulations <= 0
+    ):
+        raise ValueError("n_simulations must be a positive integer.")
+
+    observed_summary = np.asarray(
+        summary_fn(observed_data),
+        dtype=float,
+    )
+
+    if not np.all(np.isfinite(observed_summary)):
+        raise ValueError(
+            "Observed summary contains non-finite values."
+        )
+
     accepted_parameters = []
     accepted_distances = []
-    
-    # Run simulations
+
     for _ in range(n_simulations):
-        # Sample parameters from the prior distribution
-        parameters = prior.sample()
 
-        # Simulate data using the sampled parameters
-        simulated_data = simulator(parameters)
+        theta = prior.sample()
+        simulated_data = simulator(theta)
 
-        # Compute summary statistics for simulated data
-        simulated_summary = summary_fn(simulated_data)
+        simulated_summary = np.asarray(
+            summary_fn(simulated_data),
+            dtype=float,
+        )
 
-        # Compute the distance between the summary statistics
-        distance = distance_fn(observed_summary, simulated_summary)
+        distance = float(
+            distance_fn(observed_summary, simulated_summary)
+        )
 
-        # Accept parameters if the distance is below a certain threshold
-        if distance <= epsilon:  # This threshold can be adjusted based on the problem
-            accepted_parameters.append(parameters)
+        if not np.isfinite(distance):
+            raise ValueError(
+                "Distance function returned a non-finite value."
+            )
+
+        if distance <= epsilon:
+            accepted_parameters.append(theta)
             accepted_distances.append(distance)
 
-    return accepted_parameters, np.array(accepted_distances)
+    return accepted_parameters, accepted_distances
