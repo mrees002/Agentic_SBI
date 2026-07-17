@@ -10,9 +10,22 @@ def mean_std_summary(y):
     Returns:
     array: mean and standard deviation of the data
     """
-    mean = np.mean(y)
-    std = np.std(y)
-    return np.array([mean, std])
+    
+    y = np.asarray(y, dtype=float)
+
+    if y.ndim != 1:
+        raise ValueError("Input data must be one-dimensional.")
+
+    if y.size < 2:
+        raise ValueError("At least two observations are required.")
+
+    if not np.all(np.isfinite(y)):
+        raise ValueError("Input data contains non-finite values.")
+
+    return np.array([
+        np.mean(y),
+        np.std(y, ddof=1),
+    ])
 
 def regression_summary(x, y):
 
@@ -27,15 +40,13 @@ def regression_summary(x, y):
     array: regression coefficients
     """
 
-    # Add a column of ones to x for the intercept term
-    X = np.column_stack((np.ones(x.shape[0]), x))
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    # Add a column of ones to x for the intercept term to create design matrix
+    design_matrix = np.column_stack((np.ones(x.shape[0]), x))
 
     # Perform linear regression using least squares
-    intercept, slope = np.linalg.lstsq(X, y, rcond=None)[0]
-
-    # Calculate the residuals and their standard deviation
-    fitted = intercept + slope * x
-    residuals = y - fitted
-    residual_sd = np.sqrt(np.sum(residuals**2) / (x.size - 2))
+    intercept, slope = np.linalg.lstsq(design_matrix, y, rcond=None)[0]
     
-    return np.array([intercept, slope, residual_sd])
+    return np.array([intercept, slope])
