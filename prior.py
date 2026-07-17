@@ -3,6 +3,19 @@ import numpy as np
 class UniformPrior:
     def __init__(self, bounds):
         # store the bounds, which should be a dictionary with parameter names as keys and (lower, upper) tuples as values
+        for name, interval in bounds.items():
+            if len(interval) != 2:
+                raise ValueError(
+                    f"Bounds for '{name}' must contain two values."
+                )
+
+            lower, upper = interval
+
+            if lower >= upper:
+                raise ValueError(
+                    f"Lower bound for '{name}' must be less than upper bound."
+                )
+
         self.bounds = bounds
     
     def sample(self):
@@ -29,22 +42,32 @@ class UniformPrior:
     
 class GaussianPrior:
 
-    """
-    Samples from the gaussian prior distribution defined by the the mean and standard deviations
-
-    Parameters:
-    mean: a dictionary of means of the parameters
-    std: a dictionary of standard deviations of the parameters
-
-    Returns:
-    dict: parameter names and their sampled values
-    """
-
     def __init__(self, mean, std):
-        self.means = mean
-        self.stds = std
+        if mean.keys() != std.keys():
+            raise ValueError(
+                "Mean and standard deviation parameter names must match."
+            )
+
+        for name, value in std.items():
+            if value <= 0:
+                raise ValueError(
+                    f"Standard deviation for '{name}' must be positive."
+                )
+
 
     def sample(self):
+
+        """
+        Samples from the gaussian prior distribution defined by the the mean and standard deviations
+
+        Parameters:
+        mean: a dictionary of means of the parameters
+        std: a dictionary of standard deviations of the parameters
+
+        Returns:
+        dict: parameter names and their sampled values
+        """
+        
         parameters = {}
 
         # iterate through dictionary of means/stds and sample from Gaussian distribution for each parameter
