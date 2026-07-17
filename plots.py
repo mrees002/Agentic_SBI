@@ -1,13 +1,17 @@
-import matplotlib.pyplot as plt
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_posterior(accepted_parameters, true_values=None, output_path=None):
-    
+def plot_posterior(
+    accepted_parameters,
+    true_values=None,
+    output_path=None,
+):
+    """
+    Plot marginal posterior histograms for accepted ABC parameters.
+    """
     if len(accepted_parameters) == 0:
         raise ValueError("No accepted samples to plot.")
 
@@ -20,8 +24,8 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
             )
 
     figure, axes = plt.subplots(
-        len(parameter_names),
-        1,
+        nrows=len(parameter_names),
+        ncols=1,
         figsize=(7, 3 * len(parameter_names)),
     )
 
@@ -29,10 +33,15 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
         axes = [axes]
 
     for axis, name in zip(axes, parameter_names):
-        values = np.array([
-            sample[name]
-            for sample in accepted_parameters
-        ])
+        values = np.asarray(
+            [sample[name] for sample in accepted_parameters],
+            dtype=float,
+        )
+
+        if not np.all(np.isfinite(values)):
+            raise ValueError(
+                f"Accepted values for '{name}' must be finite."
+            )
 
         axis.hist(values, bins=30, density=True)
         axis.set_title(f"Posterior for {name}")
@@ -51,10 +60,7 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
 
     if output_path is not None:
         output_path = Path(output_path)
-        output_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         figure.savefig(output_path)
 
     return figure
