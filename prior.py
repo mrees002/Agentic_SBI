@@ -42,13 +42,17 @@ class UniformPrior:
     
 class GaussianPrior:
 
-    def __init__(self, mean, std):
-        if mean.keys() != std.keys():
+    def __init__(self, means, stds):
+        
+        self.means = means
+        self.stds = stds
+
+        if self.means.keys() != self.stds.keys():
             raise ValueError(
                 "Mean and standard deviation parameter names must match."
             )
 
-        for name, value in std.items():
+        for name, value in self.stds.items():
             if value <= 0:
                 raise ValueError(
                     f"Standard deviation for '{name}' must be positive."
@@ -67,7 +71,7 @@ class GaussianPrior:
         Returns:
         dict: parameter names and their sampled values
         """
-        
+
         parameters = {}
 
         # iterate through dictionary of means/stds and sample from Gaussian distribution for each parameter
@@ -75,3 +79,31 @@ class GaussianPrior:
             parameters[name] = np.random.normal(mean, self.stds[name])
 
         return parameters
+    
+
+if __name__ == "__main__":
+    uniform_prior = UniformPrior({
+        "intercept": (-2, 2),
+        "slope": (0, 5),
+    })
+
+    uniform_sample = uniform_prior.sample()
+    print("Uniform sample:", uniform_sample)
+
+    assert -2 <= uniform_sample["intercept"] <= 2
+    assert 0 <= uniform_sample["slope"] <= 5
+
+    gaussian_prior = GaussianPrior(
+        {"intercept": 0, "slope": 1},
+        {"intercept": 2, "slope": 0.5},
+    )
+
+    gaussian_sample = gaussian_prior.sample()
+    print("Gaussian sample:", gaussian_sample)
+
+    assert set(gaussian_sample.keys()) == {
+        "intercept",
+        "slope",
+    }
+
+    print("All prior checks passed.")
