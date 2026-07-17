@@ -1,6 +1,6 @@
 import numpy as np
 
-def exact_posterior(x, y, noise_sd, prior):
+def exact_linear_regression_posterior(x, y, noise_sd, prior_mean, prior_covariance):
 
     """
     Computes the exact posterior distribution for a linear regression model with Gaussian noise.
@@ -16,19 +16,59 @@ def exact_posterior(x, y, noise_sd, prior):
     sigma_n: posterior covariance matrix of the parameters
     """
 
-    # Add a column of ones to x for the intercept term to create the design matrix
-    X = np.column_stack((np.ones(x.shape[0]), x))
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    prior_mean = np.asarray(prior_mean, dtype=float)
+    prior_covariance = np.asarray(prior_covariance, dtype=float)
 
-    # Pull prior mean and covariance from the GaussianPrior object, keeping
-    # [intercept, slope] ordering consistent with X's columns
-    mu_0 = np.array([prior.means['intercept'], prior.means['slope']])
-    sigma_0 = np.diag([prior.stds['intercept'] ** 2, prior.stds['slope'] ** 2])
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must be one-dimensional.")
 
-    # Calculate the posterior covariance matrix
-    sigma_n = np.linalg.inv(np.linalg.inv(sigma_0) + X.T @ X / noise_sd ** 2)
-    mu_n = sigma_n @ (np.linalg.inv(sigma_0) @ mu_0 + X.T @ y / noise_sd ** 2)
+    if x.shape != y.shape:
+        raise ValueError("x and y must have the same shape.")
 
-    return mu_n, sigma_n
+    if noise_sd <= 0 or not np.isfinite(noise_sd):
+        raise ValueError("noise_sd must be a positive finite number.")
+
+    if prior_mean.shape != (2,):
+        raise ValueError("prior_mean must have shape (2,).")
+
+    if prior_covariance.shape != (2, 2):
+        raise ValueError("prior_covariance must have shape (2, 2).")
+
+    if not np.all(np.isfinite(x)) or not np.all(np.isfinite(y)):
+        raise ValueError("x and y must contain only finite values.")
+
+    if not np.all(np.isfinite(prior_mean)):
+        raise ValueError("prior_mean must contain only finite values.")
+
+    if not np.all(np.isfinite(prior_covariance)):
+        raise ValueError(
+            "prior_covariance must contain only finite values."
+        )
+
+    design_matrix = np.column_stack(
+        (np.ones(x.size), x)
+    )
+
+    prior_precision = np.linalg.inv(prior_covariance)
+    noise_variance = noise_sd ** 2
+
+    posterior_precision = (
+        prior_precision
+        + design_matrix.T @ design_matrix / noise_variance
+    )
+
+    posterior_covariance = np.linalg.inv(
+        posterior_precision
+    )
+
+    posterior_mean = posterior_covariance @ (
+        prior_precision @ prior_mean
+        + design_matrix.T @ y / noise_variance
+    )
+
+    return posterior_mean, posterior_covariance
 
 def sample_exact_posterior(mu_n, sigma_n, n_samples):
 
