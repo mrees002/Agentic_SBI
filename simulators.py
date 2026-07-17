@@ -12,16 +12,34 @@ def simulate_linear_regression(theta, x, noise_sd):
     Returns:
     array: simulated output based on linear model with gaussian noise
     """
-    # compute the mean (intercept + slope * x)
-    y_mean = theta['intercept'] + theta['slope'] * x
 
-    # add gaussian noise
-    y_simulated = y_mean + np.random.normal(0, noise_sd, size=x.shape)
+    x = np.asarray(x, dtype=float)
 
-    # return the simulated y values
-    return y_simulated
+    if x.ndim != 1:
+        raise ValueError("x must be one-dimensional.")
 
-def simulate_exponential_decay(theta, x, noise_sd):
+    if not np.all(np.isfinite(x)):
+        raise ValueError("x must contain only finite values.")
+
+    if noise_sd <= 0:
+        raise ValueError("noise_sd must be positive.")
+
+    required = {"intercept", "slope"}
+    if set(theta) != required:
+        raise ValueError(
+            "theta must contain exactly 'intercept' and 'slope'."
+        )
+    
+    intercept = float(theta["intercept"])
+    slope = float(theta["slope"])
+
+    if not np.isfinite(intercept) or not np.isfinite(slope):
+        raise ValueError("theta values must be finite.")
+
+    mean = intercept + slope * x
+    return np.random.normal(mean, noise_sd)
+
+def simulate_exponential_decay(theta, time, noise_sd):
     """
     A simple exponential decay simulator that generates data based on the provided parameters.
 
@@ -33,11 +51,29 @@ def simulate_exponential_decay(theta, x, noise_sd):
     Returns:
     array: simulated output based on exponential decay model with gaussian noise
     """
-    # compute the mean (initial_amplitude * exp(-decay_rate * x))
-    y_mean = theta['initial_amplitude'] * np.exp(-theta['decay_rate'] * x)
+    
+    time = np.asarray(time, dtype=float)
 
-    # add gaussian noise
-    y_simulated = y_mean + np.random.normal(0, noise_sd, size=x.shape)
+    if time.ndim != 1:
+        raise ValueError("time must be one-dimensional.")
 
-    # return the simulated y values
-    return y_simulated
+    if not np.all(np.isfinite(time)):
+        raise ValueError("time must contain only finite values.")
+
+    if noise_sd <= 0:
+        raise ValueError("noise_sd must be positive.")
+
+    required = {"initial_value", "decay_rate"}
+    if set(theta) != required:
+        raise ValueError(
+            "theta must contain exactly 'initial_value' and 'decay_rate'."
+        )
+
+    initial_value = float(theta["initial_value"])
+    decay_rate = float(theta["decay_rate"])
+
+    if not np.isfinite(initial_value) or not np.isfinite(decay_rate):
+        raise ValueError("theta values must be finite.")
+
+    mean = initial_value * np.exp(-decay_rate * time)
+    return np.random.normal(mean, noise_sd)
