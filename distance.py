@@ -13,4 +13,16 @@ def euclidean_distance(summary1, summary2):
     float: The Euclidean distance between the two summary statistics.
     """
 
-    return np.linalg.norm(np.array(summary1) - np.array(summary2))
+    summary1 = np.asarray(summary1, dtype=float)
+    summary2 = np.asarray(summary2, dtype=float)
+
+    if summary1.shape != summary2.shape:
+        raise ValueError("Summaries must have the same shape.")
+
+    if not np.all(np.isfinite(summary1)):
+        raise ValueError("First summary contains non-finite values.")
+
+    if not np.all(np.isfinite(summary2)):
+        raise ValueError("Second summary contains non-finite values.")
+
+    return float(np.linalg.norm(summary1 - summary2))
