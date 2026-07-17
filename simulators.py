@@ -1,6 +1,6 @@
 import numpy as np
 
-def simulate_linear_regression(theta, x, noise_sd):
+def simulate_linear_regression(theta, x, noise_sd, rng):
     """
     A simple linear regression simulator that generates data based on the provided parameters.
 
@@ -8,12 +8,16 @@ def simulate_linear_regression(theta, x, noise_sd):
     theta: dictionary of parameters with keys 'intercept' and 'slope'
     x: array of input data
     noise_sd: standard deviation of the Gaussian noise to be added to the output
+    rng: numPy generator
 
     Returns:
     array: simulated output based on linear model with gaussian noise
     """
 
     x = np.asarray(x, dtype=float)
+
+    if not isinstance(rng, np.random.Generator):
+        raise TypeError("rng must be a NumPy Generator.")
 
     if x.ndim != 1:
         raise ValueError("x must be one-dimensional.")
@@ -37,9 +41,9 @@ def simulate_linear_regression(theta, x, noise_sd):
         raise ValueError("theta values must be finite.")
 
     mean = intercept + slope * x
-    return np.random.normal(mean, noise_sd)
+    return rng.normal(mean, noise_sd)
 
-def simulate_exponential_decay(theta, time, noise_sd):
+def simulate_exponential_decay(theta, time, noise_sd, rng):
     """
     A simple exponential decay simulator that generates data based on the provided parameters.
 
@@ -47,12 +51,16 @@ def simulate_exponential_decay(theta, time, noise_sd):
     theta: dictionary of parameters with keys 'initial_amplitude' and 'decay_rate'
     x: array of input data
     noise_sd: standard deviation of the Gaussian noise to be added to the output
+    rng: numPy generator
 
     Returns:
     array: simulated output based on exponential decay model with gaussian noise
     """
     
     time = np.asarray(time, dtype=float)
+
+    if not isinstance(rng, np.random.Generator):
+        raise TypeError("rng must be a NumPy Generator.")
 
     if time.ndim != 1:
         raise ValueError("time must be one-dimensional.")
@@ -76,4 +84,4 @@ def simulate_exponential_decay(theta, time, noise_sd):
         raise ValueError("theta values must be finite.")
 
     mean = initial_value * np.exp(-decay_rate * time)
-    return np.random.normal(mean, noise_sd)
+    return rng.normal(mean, noise_sd)
