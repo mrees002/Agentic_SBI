@@ -11,8 +11,10 @@ def mean_std_summary(y):
     array: mean and standard deviation of the data
     """
     
+    # create arrays
     y = np.asarray(y, dtype=float)
 
+    # run error checks
     if y.ndim != 1:
         raise ValueError("Input data must be one-dimensional.")
 
@@ -22,6 +24,7 @@ def mean_std_summary(y):
     if not np.all(np.isfinite(y)):
         raise ValueError("Input data contains non-finite values.")
 
+    # return mean and std
     return np.array([
         np.mean(y),
         np.std(y, ddof=1),
@@ -40,8 +43,19 @@ def regression_summary(x, y):
     array: regression coefficients
     """
 
+    # create arrays
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
+
+    # run error checks
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must both be one-dimensional arrays.")
+
+    if x.size != y.size:
+        raise ValueError("x and y must have the same number of observations.")
+
+    if x.size < 2:
+        raise ValueError("At least two observations are required.")
 
     # Add a column of ones to x for the intercept term to create design matrix
     design_matrix = np.column_stack((np.ones(x.shape[0]), x))

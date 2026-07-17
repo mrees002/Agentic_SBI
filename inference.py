@@ -20,6 +20,7 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     accepted_distances: np array of accepted distances
     """
 
+    # run error checks
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a NumPy Generator.")
 
@@ -36,6 +37,7 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     ):
         raise ValueError("n_simulations must be a positive integer.")
 
+    # get summary of observed data
     observed_summary = np.asarray(
         summary_fn(observed_data),
         dtype=float,
@@ -46,28 +48,36 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
             "Observed summary contains non-finite values."
         )
 
+    # intialize list for accepted parameters and distances
     accepted_parameters = []
     accepted_distances = []
 
+    # run n times
     for _ in range(n_simulations):
 
+        # sample a theta
         theta = prior.sample(rng)
+        # run simulation on sampled theta
         simulated_data = simulator(theta, rng)
 
+        # get summary statistics of sample data 
         simulated_summary = np.asarray(
             summary_fn(simulated_data),
             dtype=float,
         )
 
+        # calculate distance
         distance = float(
             distance_fn(observed_summary, simulated_summary)
         )
 
+        # ensure distance function returned valid argument
         if not np.isfinite(distance):
             raise ValueError(
                 "Distance function returned a non-finite value."
             )
 
+        # check if summary stats stay within epsilon and add to list
         if distance <= epsilon:
             accepted_parameters.append(theta)
             accepted_distances.append(distance)

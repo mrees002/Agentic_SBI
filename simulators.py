@@ -14,8 +14,10 @@ def simulate_linear_regression(theta, x, noise_sd, rng):
     array: simulated output based on linear model with gaussian noise
     """
 
+    # create array
     x = np.asarray(x, dtype=float)
 
+    # run error checks
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a NumPy Generator.")
 
@@ -34,12 +36,14 @@ def simulate_linear_regression(theta, x, noise_sd, rng):
             "theta must contain exactly 'intercept' and 'slope'."
         )
     
+    # get intercept and slope
     intercept = float(theta["intercept"])
     slope = float(theta["slope"])
 
     if not np.isfinite(intercept) or not np.isfinite(slope):
         raise ValueError("theta values must be finite.")
-
+    
+    # get mean
     mean = intercept + slope * x
     return rng.normal(mean, noise_sd)
 
@@ -57,8 +61,10 @@ def simulate_exponential_decay(theta, time, noise_sd, rng):
     array: simulated output based on exponential decay model with gaussian noise
     """
     
+    # create array for time
     time = np.asarray(time, dtype=float)
 
+    # run error checks
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a NumPy Generator.")
 
@@ -77,11 +83,13 @@ def simulate_exponential_decay(theta, time, noise_sd, rng):
             "theta must contain exactly 'initial_value' and 'decay_rate'."
         )
 
+    # get values
     initial_value = float(theta["initial_value"])
     decay_rate = float(theta["decay_rate"])
 
     if not np.isfinite(initial_value) or not np.isfinite(decay_rate):
         raise ValueError("theta values must be finite.")
 
+    # get mean
     mean = initial_value * np.exp(-decay_rate * time)
     return rng.normal(mean, noise_sd)
