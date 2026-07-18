@@ -1,6 +1,6 @@
 import numpy as np
 
-def simulate_linear_regression_sigma(theta, x, noise_sd, rng):
+def simulate_linear_regression_known_sigma(theta, x, noise_sd, rng):
     """
     A simple linear regression simulator that generates data based on the provided parameters.
 
