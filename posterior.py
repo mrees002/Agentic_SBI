@@ -49,6 +49,17 @@ def exact_linear_regression_posterior(x, y, noise_sd, prior_mean, prior_covarian
         raise ValueError(
             "prior_covariance must contain only finite values."
         )
+    
+    # ensure covaraince matrix is invertible
+    if not np.allclose(prior_covariance, prior_covariance.T):
+        raise ValueError("prior_covariance must be symmetric.")
+
+    try:
+        np.linalg.cholesky(prior_covariance)
+    except np.linalg.LinAlgError as error:
+        raise ValueError(
+            "prior_covariance must be positive definite and invertible."
+        ) from error
 
     # create design matrix
     design_matrix = np.column_stack(
@@ -64,6 +75,16 @@ def exact_linear_regression_posterior(x, y, noise_sd, prior_mean, prior_covarian
         prior_precision
         + design_matrix.T @ design_matrix / noise_variance
     )
+
+    # ensure posterior precision matrix is invertible
+    try:
+        posterior_covariance = np.linalg.inv(
+            posterior_precision
+        )
+    except np.linalg.LinAlgError as error:
+        raise ValueError(
+            "Posterior precision matrix is not invertible."
+        ) from error
 
     # find posterior covariance
     posterior_covariance = np.linalg.inv(
