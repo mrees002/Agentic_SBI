@@ -164,7 +164,7 @@ class SimulatorAgent:
             self.possible_fixed[name] = value
 
         # take note of values not entered
-        missing = agent.get_missing_fixed_values()
+        missing = self.get_missing_fixed_values()
 
         if missing:
             print("Still missing fixed values:", missing)
