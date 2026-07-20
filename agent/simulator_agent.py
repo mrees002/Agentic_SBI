@@ -122,8 +122,37 @@ class SimulatorAgent:
     def get_config_data(self):
         pass
 
-    def wrapper(self):
-        pass
+    def build_wrapper(self): # requires that all or no inferred parameters are in theta
+        if self.parameter_container is not None:
+
+            def wrapper(theta, rng):
+                arguments = {
+                    self.parameter_container: theta,
+                    **self.fixed_values,
+                }
+
+                if self.rng_argument is not None:
+                    arguments[self.rng_argument] = rng
+
+                return self.simulator(**arguments)
+
+        else:
+
+            def wrapper(theta, rng):
+                arguments = {}
+
+                for name in self.inferred_parameters:
+                    arguments[name] = theta[name]
+
+                arguments.update(self.fixed_values)
+
+                if self.rng_argument is not None:
+                    arguments[self.rng_argument] = rng
+
+                return self.simulator(**arguments)
+
+        self.wrapper = wrapper
+        return self.wrapper
 
     def test_abc(self):
         pass
