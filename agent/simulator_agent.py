@@ -45,10 +45,16 @@ class SimulatorAgent:
         return self.observed_data
     
     def set_epsilon(self, epsilon):
+        if not isinstance(epsilon, float):
+            raise ValueError(f"{epsilon} must be a float.")
+
         self.epsilon = epsilon
         return self.epsilon
 
     def set_n_sims(self, n_sims):
+        if not isinstance(n_sims, int):
+            raise ValueError(f"{n_sims} must be an integer.")
+
         self.n_simulations = n_sims
         return self.n_simulations
     
