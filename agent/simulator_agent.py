@@ -29,6 +29,7 @@ class SimulatorAgent:
 
         self.observed_data = None
         self.config = None
+        self.wrapper = None
 
         # abc settings
         self.epsilon = None
@@ -126,10 +127,7 @@ class SimulatorAgent:
         if self.parameter_container is not None:
 
             def wrapper(theta, rng):
-                arguments = {
-                    self.parameter_container: theta,
-                    **self.fixed_values,
-                }
+                arguments = {self.parameter_container: theta, **self.fixed_values}
 
                 if self.rng_argument is not None:
                     arguments[self.rng_argument] = rng
