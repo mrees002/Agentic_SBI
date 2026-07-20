@@ -4,6 +4,8 @@ import textwrap
 
 from agent.config import create_config
 from prior import UniformPrior
+from distance import euclidean_distance
+from summaries import mean_std_summary
 
 import numpy as np
 
@@ -15,181 +17,116 @@ class SimulatorAgent:
             raise TypeError("simulator must be callable.")
 
         self.simulator = simulator
-        self.signature = None
+        self.signature = inspect.signature(self.simulator)
 
-        self.arguments = []
-        self.inferred_parameters = []
-        self.fixed_inputs = []
+        self.arguments = list(self.signature.parameters)
         self.rng_argument = None
-        self.observed_data = None
+        self.inferred_parameters = []
+        self.parameter_container = None
 
         self.fixed_values = {}
-        self.priors = {}
+        self.prior_bounds = {}
 
+        self.observed_data = None
         self.config = None
 
-    def inspect_signature(self):
-        self.signature = inspect.signature(self.simulator)
-        self.arguments = list(self.signature.parameters)
+        # abc settings
+        self.epsilon = None
+        self.n_simulations = None
+
+        # pre-set known functions
+        self.prior = None # to be corrected with uniform prior after
+        self.distance_fn = euclidean_distance
+        self.summary_fn = mean_std_summary
 
     def load_observed_data(self, path):
         self.observed_data = np.load(path)
         return self.observed_data
+    
+    def set_epsilon(self, epsilon):
+        self.epsilon = epsilon
+        return self.epsilon
 
-    def propose_argument_roles(self):
-
-        self.inferred_parameters = []
-        self.fixed_inputs = []
-        self.rng_argument = None
-
-        for name in self.arguments:
-            lower_name = name.lower()
-
-            if "rng" in lower_name:
-                self.rng_argument = name
-
-            elif lower_name in {"x", "time", "t"}:
-                self.fixed_inputs.append(name)
-
-            else:
-                self.inferred_parameters.append(name)
-
-        if self.rng_argument is None:
-            raise ValueError("rng value not found.")
-
-    def confirm_argument_roles(self, inferred_parameters, fixed_inputs):
+    def set_n_sims(self, n_sims):
+        self.n_simulations = n_sims
+        return self.n_simulations
+    
+    def set_parameter_container(self, param_container):
+        if param_container not in self.arguments:
+            raise ValueError(f"{param_container} not in function arguments.")
         
-        all_names = set(inferred_parameters + fixed_inputs)
-        expected_names = set(self.arguments)
+        self.parameter_container = param_container
+        return self.parameter_container
+    
+    def set_rng_argument(self, rng_argument):
+        if rng_argument not in self.arguments:
+            raise ValueError(f"{rng_argument} not in function arguments.")
 
-        if self.rng_argument is not None:
-            expected_names.remove(self.rng_argument)
-
-        if all_names != expected_names:
-            raise ValueError("Every non-rng argument must be classified exactly once.")
-
-        if set(inferred_parameters) & set(fixed_inputs):
-            raise ValueError("An argument cannot be both inferred and fixed.")
-
-        self.inferred_parameters = list(inferred_parameters)
-        self.fixed_inputs = list(fixed_inputs)
-
+        self.rng_argument = rng_argument
+        return self.rng_argument
+    
     def set_fixed_values(self, **values):
+        new_fixed_values = {}
 
         for name, value in values.items():
+            if name not in self.arguments:
+                raise ValueError(f"{name} not in function arguments.")
+            if name in self.inferred_parameters:
+                raise ValueError(f"{name} is already in inferred parameters.")
+            new_fixed_values[name] = value
 
-            if name not in self.fixed_inputs:
-                raise ValueError(f"{name} is not a fixed input.")
+        self.fixed_values = new_fixed_values
 
-            self.fixed_values[name] = value
+        return self.fixed_values
 
-    def set_uniform_priors(self, priors):
+    def set_inferred_parameters(self, *parameter_names):
+        new_inferred_parameters = []
 
-        for name in self.inferred_parameters:
+        if self.parameter_container is not None:
+            for param in parameter_names:
+                new_inferred_parameters.append(param)
 
-            if name not in priors:
-                raise ValueError(f"Missing prior for {name}.")
+        else:
+            for param in parameter_names:
+                if param not in self.arguments:
+                    raise ValueError(f"{param} not in function arguments.")
+                
+                else:
+                    new_inferred_parameters.append(param)
 
-        self.priors = priors
+        self.inferred_parameters = new_inferred_parameters
+        return self.inferred_parameters
 
-    def set_theta_parameters(self, parameter_names):
-        
-        self.inferred_parameters = list(parameter_names)
+    def set_prior_bounds(self, **values):
+        new_prior_bounds = {}
 
-    def build_wrapper(self):
+        for name, value in values.items():
+            if name not in self.inferred_parameters:
+                raise ValueError(f"{name} not in inferred parameters.")
+            if not isinstance(value, tuple) or len(value) != 2:
+                raise ValueError(f"{name} must have bounds (lower, upper).")
+            if value[1] <= value[0]:
+                raise ValueError(f"{value} has improper bounds.")
+            
+            new_prior_bounds[name] = value
 
-        def wrapper(theta, rng):
+        if set(new_prior_bounds.keys()) != set(self.inferred_parameters):
+            raise ValueError(f"Missing entries.")
 
-            if "theta" in self.arguments:
-                return self.simulator(theta, rng)
+        self.prior_bounds = new_prior_bounds
+        self.prior = UniformPrior(self.prior_bounds)
 
-            arguments = {}
+    def create_config(self):
+        pass
 
-            for name in self.inferred_parameters:
-                arguments[name] = theta[name]
+    def get_config_data(self):
+        pass
 
-            for name in self.fixed_inputs:
-                arguments[name] = self.fixed_values[name]
+    def wrapper(self):
+        pass
 
-            arguments[self.rng_argument] = rng
+    def test_abc(self):
+        pass
 
-            return self.simulator(**arguments)
-
-        self.wrapper = wrapper
-
-        return self.wrapper
-
-    def make_config(self, output_path, observed_data_path, epsilon, n_simulations):
-        
-        self.config = create_config(
-            output_path=output_path,
-            inferred_parameters=self.inferred_parameters,
-            fixed_inputs=self.fixed_inputs,
-            priors=self.priors,
-            observed_data_path=observed_data_path,
-            epsilon=epsilon,
-            n_simulations=n_simulations,
-        )
-
-        return self.config
-
-    def validate(self, observed_data, rng, abc_function, prior, summary_fn, distance_fn):
-
-        # Run simulator once with random parameters
-        theta = prior.sample(rng)
-
-        try:
-            simulated_data = self.wrapper(theta, rng)
-        except Exception as error:
-            raise RuntimeError(
-                f"Simulator validation failed: {error}"
-            ) from error
-
-        observed_data = np.asarray(observed_data)
-        simulated_data = np.asarray(simulated_data)
-
-        # Check output compatibility
-        if simulated_data.shape != observed_data.shape:
-            raise ValueError(
-                "Simulated data and observed data have different shapes."
-            )
-
-        if not np.all(np.isfinite(simulated_data)):
-            raise ValueError(
-                "Simulator returned non-finite values."
-            )
-
-        # Run a very small ABC test
-        accepted_parameters, accepted_distances = abc_function(
-            prior=prior,
-            simulator=self.wrapper,
-            observed_data=observed_data,
-            summary_fn=summary_fn,
-            distance_fn=distance_fn,
-            epsilon=np.inf,
-            n_simulations=2,
-            rng=rng,
-        )
-
-        if len(accepted_parameters) == 0:
-            raise ValueError(
-                "ABC validation did not produce posterior samples."
-            )
-
-        return True
-    
-    def run_abc(self, observed_data, abc_function, summary_fn, distance_fn, epsilon, n_simulations, rng):
-
-        prior = UniformPrior(self.priors)
-        rng = np.random.default_rng()
-
-        return abc_function(
-            prior=prior,
-            simulator=self.wrapper,
-            observed_data=observed_data,
-            summary_fn=summary_fn,
-            distance_fn=distance_fn,
-            epsilon=epsilon,
-            n_simulations=n_simulations,
-            rng=rng,
-        )
+    def run_abc(self):
+        pass
