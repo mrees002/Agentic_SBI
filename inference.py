@@ -17,7 +17,7 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
 
     Returns:
     accepted_parameters: List of accepted parameter sets
-    accepted_distances: np array of accepted distances
+    accepted_distances: List of accepted distances
     """
 
     # run error checks
