@@ -37,6 +37,7 @@ def create_config(
     rng_argument,
     inferred_parameters,
     fixed_values,
+    fixed_value_path,
     prior_bounds,
     observed_data_path,
     epsilon,
@@ -56,6 +57,7 @@ def create_config(
             "prior_bounds": prior_bounds,
         },
         "fixed_values": fixed_values,
+        "fixed_value_path": fixed_value_path,
         "observed_data_path": observed_data_path,
         "abc": {
             "epsilon": epsilon,

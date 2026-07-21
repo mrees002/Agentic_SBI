@@ -28,6 +28,7 @@ class SimulatorAgent:
         self.random_seed = 123
 
         self.fixed_values = {}
+        self.fixed_value_path = {}
         self.prior_bounds = {}
 
         self.observed_data = None
@@ -147,6 +148,9 @@ class SimulatorAgent:
             raise ValueError("Number of simulations has not been set.")
         if self.observed_data_path is None:
             raise ValueError("Observed data path has not been set.")
+        
+        literal_fixed_values = {name: value for name, value in self.fixed_values.items()
+                                if name not in self.fixed_value_path}
 
         self.config = create_config(
             output_path=output_path,
@@ -154,7 +158,8 @@ class SimulatorAgent:
             parameter_container=self.parameter_container,
             rng_argument=self.rng_argument,
             inferred_parameters=self.inferred_parameters,
-            fixed_values=self.fixed_values,
+            fixed_values=literal_fixed_values,
+            fixed_value_path = self.fixed_value_path,
             prior_bounds=self.prior_bounds,
             observed_data_path=self.observed_data_path,
             epsilon=self.epsilon,

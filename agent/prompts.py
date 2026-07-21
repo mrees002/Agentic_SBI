@@ -52,12 +52,15 @@ def ask_fixed_value(parameter_name):
     ).strip()
 
     try:
-        return float(text)
+        return float(text), None
     except ValueError:
         pass
 
     try:
-        return np.load(text)
+        value = np.load(
+            text,
+            allow_pickle=False,
+        )
     except (
         FileNotFoundError,
         IsADirectoryError,
@@ -69,6 +72,8 @@ def ask_fixed_value(parameter_name):
             f"{parameter_name} must be a number "
             "or a valid path to a NumPy .npy file."
         ) from error
+
+    return value, text
 
 
 def display_analysis(analysis):
@@ -396,19 +401,29 @@ def collect_missing_inputs(agent):
 
     if "fixed_values" in missing:
         fixed_values = {}
+        fixed_value_path = {}
 
         for name in missing["fixed_values"]:
             if name in agent.fixed_values:
                 continue
 
-            fixed_values[name] = (
-                ask_fixed_value(name)
+            value, source_path = ask_fixed_value(
+                name
             )
+
+            fixed_values[name] = value
+
+            if source_path is not None:
+                fixed_value_path[name] = source_path
 
         if fixed_values:
             agent.set_fixed_values(
                 **fixed_values
             )
+
+        agent.fixed_value_path.update(
+            fixed_value_path
+        )
 
     missing = agent.get_missing_fields()
 
