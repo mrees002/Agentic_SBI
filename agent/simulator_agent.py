@@ -1,6 +1,4 @@
-import ast
 import inspect
-import textwrap
 
 from agent.config import create_config, load_config
 from prior import UniformPrior
@@ -93,11 +91,11 @@ class SimulatorAgent:
         for name, value in values.items():
             if name not in self.arguments:
                 raise ValueError(f"{name} not in function arguments.")
-            if name in self.inferred_parameters:
-                raise ValueError(f"{name} is already in inferred parameters.")
-            new_fixed_values[name] = value
+            if (self.parameter_container is None and name in self.inferred_parameters):
+                raise ValueError(f"{name} is already an inferred parameter.")
 
-        self.fixed_values = new_fixed_values
+            new_fixed_values[name] = value
+        self.fixed_values.update(new_fixed_values)
 
         return self.fixed_values
 
@@ -348,3 +346,40 @@ class SimulatorAgent:
             raise ValueError("No accepted parameters.")
         
         plot_posterior(self.accepted_parameters, output_path)
+
+    def get_missing_fields(self):
+        missing = {}
+
+        if not self.inferred_parameters:
+            missing["inferred_parameters"] = True
+
+        expected_fixed = set(self.arguments)
+
+        if self.parameter_container is not None:
+            expected_fixed.discard(self.parameter_container)
+
+        if self.rng_argument is not None:
+            expected_fixed.discard(self.rng_argument)
+
+        expected_fixed -= set(self.inferred_parameters)
+
+        missing_fixed = sorted(expected_fixed - set(self.fixed_values))
+
+        if missing_fixed:
+            missing["fixed_values"] = missing_fixed
+
+        missing_priors = sorted(set(self.inferred_parameters) - set(self.prior_bounds))
+
+        if missing_priors:
+            missing["prior_bounds"] = missing_priors
+
+        if self.observed_data_path is None:
+            missing["observed_data_path"] = True
+
+        if self.epsilon is None:
+            missing["epsilon"] = True
+
+        if self.n_simulations is None:
+            missing["n_simulations"] = True
+
+        return missing
