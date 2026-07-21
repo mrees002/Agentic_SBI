@@ -6,6 +6,8 @@ from agent.config import create_config, load_config
 from prior import UniformPrior
 from distance import euclidean_distance
 from summaries import mean_std_summary
+from inference import abc_function
+from plots import plot_posterior
 
 import numpy as np
 
@@ -37,11 +39,16 @@ class SimulatorAgent:
         # abc settings
         self.epsilon = None
         self.n_simulations = None
+        self.abc_function = abc_function
 
         # pre-set known functions
         self.prior = None # to be corrected with uniform prior after
         self.distance_fn = euclidean_distance
         self.summary_fn = mean_std_summary
+
+        # save results
+        self.accepted_distances = []
+        self.accepted_parameters = []
     
     def load_observed_data(self, path):
         self.observed_data_path = str(path)
@@ -214,7 +221,130 @@ class SimulatorAgent:
         return self.wrapper
 
     def test_abc(self):
-        pass
+        if self.observed_data is None:
+            raise ValueError("Observed data has not been loaded.")
+
+        if self.prior is None:
+            raise ValueError("Prior bounds have not been set.")
+
+        if self.wrapper is None:
+            raise ValueError("Simulator wrapper has not been built.")
+
+        rng = np.random.default_rng(self.random_seed)
+
+        # 1. Sample parameters from the configured prior
+        try:
+            test_theta = self.prior.sample(rng)
+        except Exception as error:
+            raise RuntimeError(f"Prior sampling failed: {error}") from error
+
+        # 2. Execute the simulator
+        try:
+            simulated_data = self.wrapper(test_theta, rng)
+        except Exception as error:
+            raise RuntimeError(f"Simulator execution failed: {error}") from error
+
+        simulated_data = np.asarray(simulated_data)
+        observed_data = np.asarray(self.observed_data)
+
+        # 3. Validate simulator output
+        if simulated_data.shape != observed_data.shape:
+            raise ValueError(
+                "Simulator output is incompatible with observed data: "
+                f"simulated shape {simulated_data.shape}, "
+                f"observed shape {observed_data.shape}."
+            )
+        
+        # 4. Run a very small ABC smoke test with automatic acceptance
+        try:
+            accepted_parameters, accepted_distances = self.abc_function(
+                prior=self.prior,
+                simulator=self.wrapper,
+                observed_data=self.observed_data,
+                summary_fn=self.summary_fn,
+                distance_fn=self.distance_fn,
+                epsilon=np.inf,
+                n_simulations=2,
+                rng=rng,
+            )
+        except Exception as error:
+            raise RuntimeError(f"ABC pipeline test failed: {error}") from error
+
+        if len(accepted_parameters) == 0:
+            raise ValueError("ABC test produced no accepted parameter samples.")
+
+        if len(accepted_parameters) != len(accepted_distances):
+            raise ValueError(
+                "ABC returned inconsistent parameter and distance counts."
+            )
+
+        accepted_distances = np.asarray(accepted_distances)
+
+        if not np.all(np.isfinite(accepted_distances)):
+            raise ValueError("ABC returned non-finite distances.")
+
+        return {
+            "success": True,
+            "sampled_parameters": test_theta,
+            "simulated_shape": simulated_data.shape,
+            "observed_shape": observed_data.shape,
+            "accepted_samples": len(accepted_parameters),
+        }
 
     def run_abc(self):
-        pass
+        if self.observed_data is None:
+            raise ValueError("Observed data has not been loaded.")
+
+        if self.prior is None:
+            raise ValueError("Prior bounds have not been set.")
+
+        if self.wrapper is None:
+            raise ValueError("Simulator wrapper has not been built.")
+
+        if self.epsilon is None:
+            raise ValueError("ABC epsilon has not been set.")
+
+        if self.n_simulations is None:
+            raise ValueError("Number of simulations has not been set.")
+
+        rng = np.random.default_rng(self.random_seed)
+
+        try:
+            accepted_parameters, accepted_distances = self.abc_function(
+                prior=self.prior,
+                simulator=self.wrapper,
+                observed_data=self.observed_data,
+                summary_fn=self.summary_fn,
+                distance_fn=self.distance_fn,
+                epsilon=self.epsilon,
+                n_simulations=self.n_simulations,
+                rng=rng,
+            )
+        except Exception as error:
+            raise RuntimeError(f"ABC inference failed: {error}") from error
+
+        if len(accepted_parameters) == 0:
+            raise ValueError(
+                "ABC inference completed but accepted no parameter samples. "
+                "Consider increasing epsilon or the simulation budget."
+            )
+
+        if len(accepted_parameters) != len(accepted_distances):
+            raise ValueError("ABC returned inconsistent parameter and distance counts.")
+
+        accepted_distances = np.asarray(accepted_distances, dtype=float,)
+
+        if not np.all(np.isfinite(accepted_distances)):
+            raise ValueError("ABC returned NaN or infinite distances.")
+        
+        self.accepted_parameters = accepted_parameters
+        self.accepted_distances = accepted_distances
+
+        return accepted_parameters, accepted_distances
+    
+    def plot_posterior_hist(self, output_path = None):
+
+        if not self.accepted_parameters:
+            raise ValueError("No accepted parameters.")
+        
+        plot_posterior(self.accepted_parameters, output_path)

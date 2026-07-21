@@ -24,9 +24,6 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a NumPy Generator.")
 
-    if not np.isscalar(epsilon) or not np.isfinite(epsilon):
-        raise ValueError("epsilon must be a finite number.")
-
     if epsilon < 0:
         raise ValueError("epsilon must be nonnegative.")
 
