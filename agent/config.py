@@ -102,6 +102,25 @@ def normalize_config(config):
     inference_config = config["inference"]
     abc_config = config["abc"]
 
+    fixed_values = {
+        name: np.asarray(value)
+        if isinstance(value, list)
+        else value
+        for name, value in config.get(
+            "fixed_values",
+            {}
+        ).items()
+    }
+
+    for name, path in config.get(
+        "fixed_value_path",
+        {}
+    ).items():
+        fixed_values[name] = np.load(
+            path,
+            allow_pickle=False,
+        )
+
     normalized = {
         "parameter_container": simulator_config.get(
             "parameter_container"
@@ -110,7 +129,9 @@ def normalize_config(config):
             "rng_argument"
         ),
         "inferred_parameters": list(
-            inference_config["inferred_parameters"]
+            inference_config[
+                "inferred_parameters"
+            ]
         ),
         "prior_bounds": {
             name: tuple(bounds)
@@ -118,21 +139,17 @@ def normalize_config(config):
                 "prior_bounds"
             ].items()
         },
-        "fixed_values": {
-            name: np.asarray(value)
-            if isinstance(value, list)
-            else value
-            for name, value in config.get(
-                "fixed_values",
-                {}
-            ).items()
-        },
+        "fixed_values": fixed_values,
         "observed_data_path": config.get(
             "observed_data_path"
         ),
         "epsilon": abc_config["epsilon"],
-        "n_simulations": abc_config["n_simulations"],
-        "random_seed": abc_config["random_seed"],
+        "n_simulations": abc_config[
+            "n_simulations"
+        ],
+        "random_seed": abc_config[
+            "random_seed"
+        ],
     }
 
     return normalized
