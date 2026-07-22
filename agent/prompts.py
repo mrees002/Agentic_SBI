@@ -58,35 +58,126 @@ def ask_epsilon():
 def ask_n_simulations():
     return int(input("Number of simulations: "))
 
-def ask_fixed_value(parameter_name):
-    text = input(
-        f"Fixed value for {parameter_name} "
-        "(number or .npy path): "
-    ).strip()
+def ask_fixed_value(name):
+    while True:
+        print(f"\nFixed value for {name}:")
+        print("  1. Enter a number")
+        print("  2. Load a .npy file")
+        print("  3. Generate a numeric sequence")
 
-    try:
-        return float(text), None
-    except ValueError:
-        pass
+        selection = input(
+            "Selection [1/2/3]: "
+        ).strip()
 
-    try:
-        value = np.load(
-            text,
-            allow_pickle=False,
-        )
-    except (
-        FileNotFoundError,
-        IsADirectoryError,
-        PermissionError,
-        ValueError,
-        OSError,
-    ) as error:
+        if selection == "1":
+            return _ask_numeric_fixed_value(name)
+
+        if selection == "2":
+            return _ask_array_file(name)
+
+        if selection == "3":
+            return _ask_generated_array(name)
+
+        print("Please enter 1, 2, or 3.")
+
+def _ask_numeric_fixed_value(name):
+    while True:
+        text = input(
+            f"Numeric value for {name}: "
+        ).strip()
+
+        try:
+            value = float(text)
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        return value, None
+
+def _ask_array_file(name):
+    while True:
+        path = input(
+            f"Path to .npy file for {name}: "
+        ).strip()
+
+        if not path:
+            print("A file path is required.")
+            continue
+
+        if not path.lower().endswith(".npy"):
+            print("The file must end in .npy.")
+            continue
+
+        try:
+            value = np.load(
+                path,
+                allow_pickle=False,
+            )
+        except (OSError, ValueError) as error:
+            print(
+                f"Could not load the array: {error}"
+            )
+            continue
+
+        return value, path
+
+def _ask_generated_array(name):
+    print(
+        f"\nGenerate an evenly spaced array for {name}."
+    )
+
+    start = _ask_float("Start value: ")
+    stop = _ask_float("Stop value: ")
+    number_of_points = _ask_positive_integer(
+        "Number of points: "
+    )
+
+    if stop <= start:
         raise ValueError(
-            f"{parameter_name} must be a number "
-            "or a valid path to a NumPy .npy file."
-        ) from error
+            "Stop value must be greater "
+            "than start value."
+        )
 
-    return value, text
+    values = np.linspace(
+        start,
+        stop,
+        number_of_points,
+    )
+
+    print(
+        f"Generated {name} with shape "
+        f"{values.shape}."
+    )
+
+    return values, None
+
+def _ask_float(message):
+    while True:
+        text = input(message).strip()
+
+        try:
+            return float(text)
+        except ValueError:
+            print("Please enter a valid number.")
+
+def _ask_positive_integer(message):
+    while True:
+        text = input(message).strip()
+
+        try:
+            value = int(text)
+        except ValueError:
+            print("Please enter a whole number.")
+            continue
+
+        if value < 2:
+            print(
+                "Number of points must be "
+                "at least 2."
+            )
+            continue
+
+        return value
 
 
 def display_analysis(analysis):
