@@ -13,8 +13,10 @@ from agent.prompts import (
     review_analysis,
 )
 
-from agent.config import(
-    load_config_file
+from agent.config import (
+    create_synthetic_config,
+    load_config_file,
+    load_synthetic_config,
 )
 
 from agent.simulator_agent import (
@@ -33,6 +35,8 @@ from agent.run_directory import (
     create_run_directory,
     save_run_data,
 )
+
+from pathlib import Path
 
 def create_agent_from_config(config_path):
     config = load_config_file(config_path)
@@ -72,6 +76,31 @@ def create_agent_from_config(config_path):
     agent.configure_from_file(
         config_path
     )
+
+    synthetic_config_path = (
+        Path(config_path).parent
+        / "synthetic_config.json"
+    )
+
+    synthetic_config = (
+        load_synthetic_config(
+            synthetic_config_path
+        )
+    )
+
+    if synthetic_config is not None:
+        agent.set_synthetic_metadata(
+            true_parameter_values=(
+                synthetic_config[
+                    "true_parameter_values"
+                ]
+            ),
+            generation_seed=(
+                synthetic_config[
+                    "generation_seed"
+                ]
+            ),
+        )
 
     return agent
 
@@ -160,6 +189,21 @@ def main():
     agent.create_config(
         run_paths["config_path"]
     )
+
+    if agent.true_parameter_values is not None:
+        create_synthetic_config(
+            output_path=(
+                run_paths[
+                    "synthetic_config_path"
+                ]
+            ),
+            true_parameter_values=(
+                agent.true_parameter_values
+            ),
+            generation_seed=(
+                agent.synthetic_generation_seed
+            ),
+        )
 
     print(
         "Run directory:",

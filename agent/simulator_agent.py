@@ -31,8 +31,9 @@ class SimulatorAgent:
         self.config = None
         self.wrapper = None
 
-        # add true parameter values if needed
+        # add synthetic dataset reqs
         self.true_parameter_values = None
+        self.synthetic_generation_seed = None
 
         # add paths
         self.fixed_value_path = {}
@@ -429,10 +430,10 @@ class SimulatorAgent:
                 f"{missing_parameters}"
             )
 
-        rng = np.random.default_rng(self.random_seed + 1)
+        self.synthetic_generation_seed = (self.random_seed + 1)
+        rng = np.random.default_rng(self.synthetic_generation_seed)
 
         observed_data = self.wrapper(true_parameter_values, rng)
-
         observed_data = np.asarray(observed_data)
 
         if observed_data.size == 0:
@@ -448,3 +449,39 @@ class SimulatorAgent:
         self.true_parameter_values = dict(true_parameter_values)
 
         return self.observed_data
+
+    def set_synthetic_metadata(self, true_parameter_values, generation_seed):
+        if not isinstance(
+            true_parameter_values,
+            dict,
+        ):
+            raise TypeError(
+                "true_parameter_values must be "
+                "a dictionary."
+            )
+
+        expected = set(
+            self.inferred_parameters
+        )
+
+        provided = set(
+            true_parameter_values
+        )
+
+        if provided != expected:
+            raise ValueError(
+                "True parameter names must match "
+                "the inferred parameters."
+            )
+
+        if not isinstance(generation_seed, int):
+            raise TypeError(
+                "generation_seed must be "
+                "an integer."
+            )
+
+        self.true_parameter_values = dict(true_parameter_values)
+
+        self.synthetic_generation_seed = generation_seed
+
+        return self.true_parameter_values

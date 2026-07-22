@@ -223,3 +223,86 @@ def load_config(config_path):
     )
 
     return raw_config, normalized_config
+
+def create_synthetic_config(
+    output_path,
+    true_parameter_values,
+    generation_seed,
+):
+    if not true_parameter_values:
+        raise ValueError(
+            "True parameter values are required."
+        )
+
+    config = {
+        "true_parameter_values": (
+            true_parameter_values
+        ),
+        "generation_seed": generation_seed,
+    }
+
+    config = make_json_safe(config)
+
+    output_path = Path(output_path)
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with output_path.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            config,
+            file,
+            indent=4,
+        )
+
+    return config
+
+def load_synthetic_config(config_path):
+    config_path = Path(config_path)
+
+    if not config_path.exists():
+        return None
+
+    if config_path.suffix.lower() != ".json":
+        raise ValueError(
+            "Synthetic config must be "
+            "a JSON file."
+        )
+
+    with config_path.open(
+        "r",
+        encoding="utf-8",
+    ) as file:
+        config = json.load(file)
+
+    true_values = config.get(
+        "true_parameter_values"
+    )
+
+    generation_seed = config.get(
+        "generation_seed"
+    )
+
+    if not isinstance(true_values, dict):
+        raise ValueError(
+            "Synthetic config does not contain "
+            "valid true parameter values."
+        )
+
+    if not isinstance(generation_seed, int):
+        raise ValueError(
+            "Synthetic config does not contain "
+            "a valid generation seed."
+        )
+
+    return {
+        "true_parameter_values": (
+            true_values
+        ),
+        "generation_seed": generation_seed,
+    }
