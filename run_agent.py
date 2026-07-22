@@ -41,6 +41,7 @@ def main():
     )
 
     agent = SimulatorAgent(simulator)
+    agent.set_simulator_path(simulator_path)
 
     analysis = analyze_agent(agent)
 

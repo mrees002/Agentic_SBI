@@ -1,6 +1,7 @@
 {
     "simulator": {
         "name": "simulate_exponential_decay",
+        "path": "simulators.py",
         "parameter_container": "theta",
         "rng_argument": "rng"
     },

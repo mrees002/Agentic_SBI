@@ -33,6 +33,7 @@ def make_json_safe(value):
 def create_config(
     output_path,
     simulator_name,
+    simulator_path,
     parameter_container,
     rng_argument,
     inferred_parameters,
@@ -49,6 +50,7 @@ def create_config(
     config = {
         "simulator": {
             "name": simulator_name,
+            "path": simulator_path,
             "parameter_container": parameter_container,
             "rng_argument": rng_argument,
         },

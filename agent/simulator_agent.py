@@ -17,6 +17,7 @@ class SimulatorAgent:
             raise TypeError("simulator must be callable.")
 
         self.simulator = simulator
+        self.simulator_path = None
         self.signature = inspect.signature(self.simulator)
 
         self.arguments = list(self.signature.parameters)
@@ -53,6 +54,10 @@ class SimulatorAgent:
         self.observed_data_path = str(path)
         self.observed_data = np.load(path)
         return self.observed_data
+    
+    def set_simulator_path(self, path):
+        self.simulator_path = path
+        return self.simulator_path
     
     def set_epsilon(self, epsilon):
         if not isinstance(epsilon, (float, int, np.number)):
@@ -164,6 +169,7 @@ class SimulatorAgent:
         self.config = create_config(
             output_path=output_path,
             simulator_name=self.simulator.__name__,
+            simulator_path=self.simulator_path,
             parameter_container=self.parameter_container,
             rng_argument=self.rng_argument,
             inferred_parameters=self.inferred_parameters,
