@@ -4,28 +4,9 @@ import shutil
 
 
 def create_run_directory(
-    config_path,
     simulator_name,
     root_directory="runs",
 ):
-    """
-    Create a unique directory for one inference run.
-
-    The source config is copied into the directory
-    as config.json.
-    """
-    config_path = Path(config_path)
-
-    if not config_path.exists():
-        raise FileNotFoundError(
-            f"Config file not found: {config_path}"
-        )
-
-    if not config_path.is_file():
-        raise ValueError(
-            f"Config path is not a file: {config_path}"
-        )
-
     root_directory = Path(root_directory)
 
     root_directory.mkdir(
@@ -50,18 +31,11 @@ def create_run_directory(
 
     run_directory.mkdir()
 
-    copied_config_path = (
-        run_directory / "config.json"
-    )
-
-    shutil.copy2(
-        config_path,
-        copied_config_path,
-    )
-
     return {
         "directory": run_directory,
-        "config_path": copied_config_path,
+        "config_path": (
+            run_directory / "config.json"
+        ),
         "results_path": (
             run_directory / "results.json"
         ),
@@ -119,3 +93,28 @@ def _make_safe_name(name):
         return "simulation"
 
     return safe_name
+
+def copy_config_to_run(
+    source_config_path,
+    destination_config_path,
+):
+    source_config_path = Path(
+        source_config_path
+    )
+
+    destination_config_path = Path(
+        destination_config_path
+    )
+
+    if not source_config_path.exists():
+        raise FileNotFoundError(
+            "Config file not found: "
+            f"{source_config_path}"
+        )
+
+    shutil.copy2(
+        source_config_path,
+        destination_config_path,
+    )
+
+    return destination_config_path

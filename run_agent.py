@@ -30,6 +30,7 @@ from agent.results import(
 )
 
 from agent.run_directory import (
+    copy_config_to_run,
     create_run_directory,
 )
 
@@ -115,10 +116,25 @@ def main():
     use_config = ask_use_config()
 
     if use_config:
-        config_path = ask_config_path()
+        source_config_path = ask_config_path()
 
         agent = create_agent_from_config(
-            config_path
+            source_config_path
+        )
+
+        run_paths = create_run_directory(
+            simulator_name=(
+                agent.simulator.__name__
+            ),
+        )
+
+        copy_config_to_run(
+            source_config_path=(
+                source_config_path
+            ),
+            destination_config_path=(
+                run_paths["config_path"]
+            ),
         )
 
         print(
@@ -128,20 +144,21 @@ def main():
     else:
         agent = create_agent_interactively()
 
-        config_path = "generated_config.json"
+        run_paths = create_run_directory(
+            simulator_name=(
+                agent.simulator.__name__
+            ),
+        )
 
         agent.create_config(
-            config_path
+            run_paths["config_path"]
         )
 
         print(
             "\nConfiguration created."
         )
 
-    run_paths = create_run_directory(
-        config_path=config_path,
-        simulator_name=agent.simulator.__name__,
-    )
+    config_path = run_paths["config_path"]
 
     print(
         "Run directory:",
