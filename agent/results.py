@@ -16,7 +16,7 @@ def create_results_summary(
 
     return {
         "config": {
-            "file": str(config_path),
+            "file": config_path.name,
         },
         "simulator": {
             "name": agent.simulator.__name__,

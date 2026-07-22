@@ -29,7 +29,9 @@ from agent.results import(
     save_results
 )
 
-from pathlib import Path
+from agent.run_directory import (
+    create_run_directory,
+)
 
 def create_agent_from_config(config_path):
     config = load_config_file(config_path)
@@ -107,10 +109,6 @@ def create_agent_interactively():
 
     collect_missing_inputs(agent)
 
-    agent.create_config(
-        "generated_config.json"
-    )
-
     return agent
 
 def main():
@@ -132,9 +130,23 @@ def main():
 
         config_path = "generated_config.json"
 
+        agent.create_config(
+            config_path
+        )
+
         print(
             "\nConfiguration created."
         )
+
+    run_paths = create_run_directory(
+        config_path=config_path,
+        simulator_name=agent.simulator.__name__,
+    )
+
+    print(
+        "Run directory:",
+        run_paths["directory"],
+    )
 
     remaining = agent.get_missing_fields()
 
@@ -173,29 +185,28 @@ def main():
     )
 
     results, results_path = save_results(
-        agent,
-        config_path,
-    )
-
-    print(
-        "Results saved to:", results_path
-    )
-
-    config_path = Path(config_path)
-
-    run_name = config_path.stem
-
-    if run_name.endswith("_config"):
-        run_name = run_name.removesuffix(
-            "_config"
-        )
-
-    posterior_path = config_path.with_name(
-        f"{run_name}_posterior.png"
+        agent=agent,
+        config_path=run_paths["config_path"],
+        output_path=run_paths["results_path"],
     )
 
     agent.plot_posterior_hist(
-        posterior_path
+        run_paths["posterior_path"]
+    )
+
+    print(
+        "Config saved to:",
+        run_paths["config_path"],
+    )
+
+    print(
+        "Results saved to:",
+        results_path,
+    )
+
+    print(
+        "Posterior plot saved in:",
+        run_paths["directory"],
     )
 
 if __name__ == "__main__":
