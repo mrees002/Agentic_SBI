@@ -76,6 +76,11 @@ def create_config(
 
     output_path = Path(output_path)
 
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     with output_path.open("w", encoding="utf-8") as file:
         json.dump(config, file, indent=4)
 
@@ -99,7 +104,9 @@ def load_config_file(config_path):
         return json.load(file)
 
 
-def normalize_config(config):
+def normalize_config(config, config_directory):
+    config_directory = Path(config_directory)
+
     simulator_config = config["simulator"]
     inference_config = config["inference"]
     abc_config = config["abc"]
@@ -118,10 +125,30 @@ def normalize_config(config):
         "fixed_value_path",
         {}
     ).items():
+        path = Path(path)
+
+        if not path.is_absolute():
+            path = config_directory / path
+
         fixed_values[name] = np.load(
             path,
             allow_pickle=False,
         )
+
+    observed_data_path = config.get(
+        "observed_data_path"
+    )
+
+    if observed_data_path is not None:
+        observed_data_path = Path(
+            observed_data_path
+        )
+
+        if not observed_data_path.is_absolute():
+            observed_data_path = (
+                config_directory
+                / observed_data_path
+            )
 
     normalized = {
         "parameter_container": simulator_config.get(
@@ -142,9 +169,7 @@ def normalize_config(config):
             ].items()
         },
         "fixed_values": fixed_values,
-        "observed_data_path": config.get(
-            "observed_data_path"
-        ),
+        "observed_data_path": observed_data_path,
         "epsilon": abc_config["epsilon"],
         "n_simulations": abc_config[
             "n_simulations"
@@ -190,6 +215,11 @@ def validate_config(config):
 def load_config(config_path):
     raw_config = load_config_file(config_path)
     validate_config(raw_config)
-    normalized_config = normalize_config(raw_config)
+    config_path = Path(config_path)
+
+    normalized_config = normalize_config(
+        raw_config,
+        config_path.parent,
+    )
 
     return raw_config, normalized_config

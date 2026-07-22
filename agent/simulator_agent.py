@@ -198,6 +198,8 @@ class SimulatorAgent:
         self.inferred_parameters = settings["inferred_parameters"]
         self.prior_bounds = settings["prior_bounds"]
         self.fixed_values = settings["fixed_values"]
+        self.fixed_value_path = dict(
+            raw_config.get("fixed_value_path", {}))
 
         self.epsilon = settings["epsilon"]
         self.n_simulations = settings["n_simulations"]
@@ -369,7 +371,7 @@ class SimulatorAgent:
         if not self.accepted_parameters:
             raise ValueError("No accepted parameters.")
         
-        plot_posterior(self.accepted_parameters, output_path = output_path)
+        plot_posterior(self.accepted_parameters, true_values = self.true_parameter_values ,output_path = output_path)
 
     def get_missing_fields(self):
         missing = {}
@@ -409,6 +411,13 @@ class SimulatorAgent:
         return missing
 
     def generate_synthetic_observed_data(self, true_parameter_values):
+
+        if not isinstance(true_parameter_values, dict):
+            raise TypeError(
+                "true_parameter_values must be "
+                "a dictionary."
+            )
+        
         if self.wrapper is None:
             self.build_wrapper()
 

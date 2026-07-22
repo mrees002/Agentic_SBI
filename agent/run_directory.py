@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-import shutil
+import numpy as np
 
 
 def create_run_directory(
@@ -94,27 +94,54 @@ def _make_safe_name(name):
 
     return safe_name
 
-def copy_config_to_run(
-    source_config_path,
-    destination_config_path,
+def save_run_data(
+    agent,
+    run_directory,
 ):
-    source_config_path = Path(
-        source_config_path
-    )
+    run_directory = Path(run_directory)
 
-    destination_config_path = Path(
-        destination_config_path
-    )
-
-    if not source_config_path.exists():
-        raise FileNotFoundError(
-            "Config file not found: "
-            f"{source_config_path}"
+    if agent.observed_data is None:
+        raise ValueError(
+            "Observed data is not available."
         )
 
-    shutil.copy2(
-        source_config_path,
-        destination_config_path,
+    observed_file_name = "observed_data.npy"
+    observed_path = (
+        run_directory / observed_file_name
     )
 
-    return destination_config_path
+    np.save(
+        observed_path,
+        np.asarray(agent.observed_data),
+    )
+
+    agent.observed_data_path = (
+        observed_file_name
+    )
+
+    for name, value in agent.fixed_values.items():
+        if not isinstance(value, np.ndarray):
+            continue
+
+        file_name = f"{name}.npy"
+        output_path = (
+            run_directory / file_name
+        )
+
+        np.save(
+            output_path,
+            value,
+        )
+
+        agent.fixed_value_path[name] = (
+            file_name
+        )
+
+    return {
+        "observed_data_path": observed_path,
+        "fixed_value_paths": {
+            name: run_directory / file_name
+            for name, file_name
+            in agent.fixed_value_path.items()
+        },
+    }

@@ -30,8 +30,8 @@ from agent.results import(
 )
 
 from agent.run_directory import (
-    copy_config_to_run,
     create_run_directory,
+    save_run_data,
 )
 
 def create_agent_from_config(config_path):
@@ -116,25 +116,12 @@ def main():
     use_config = ask_use_config()
 
     if use_config:
-        source_config_path = ask_config_path()
+        source_config_path = (
+            ask_config_path()
+        )
 
         agent = create_agent_from_config(
             source_config_path
-        )
-
-        run_paths = create_run_directory(
-            simulator_name=(
-                agent.simulator.__name__
-            ),
-        )
-
-        copy_config_to_run(
-            source_config_path=(
-                source_config_path
-            ),
-            destination_config_path=(
-                run_paths["config_path"]
-            ),
         )
 
         print(
@@ -144,26 +131,10 @@ def main():
     else:
         agent = create_agent_interactively()
 
-        run_paths = create_run_directory(
-            simulator_name=(
-                agent.simulator.__name__
-            ),
-        )
-
-        agent.create_config(
-            run_paths["config_path"]
-        )
-
         print(
-            "\nConfiguration created."
+            "\nInteractive configuration "
+            "completed."
         )
-
-    config_path = run_paths["config_path"]
-
-    print(
-        "Run directory:",
-        run_paths["directory"],
-    )
 
     remaining = agent.get_missing_fields()
 
@@ -172,6 +143,33 @@ def main():
             "Agent configuration is incomplete: "
             f"{remaining}"
         )
+
+    run_paths = create_run_directory(
+        simulator_name=(
+            agent.simulator.__name__
+        ),
+    )
+
+    save_run_data(
+        agent=agent,
+        run_directory=(
+            run_paths["directory"]
+        ),
+    )
+
+    agent.create_config(
+        run_paths["config_path"]
+    )
+
+    print(
+        "Run directory:",
+        run_paths["directory"],
+    )
+
+    print(
+        "Config saved to:",
+        run_paths["config_path"],
+    )
 
     agent.build_wrapper()
 
@@ -209,11 +207,6 @@ def main():
 
     agent.plot_posterior_hist(
         run_paths["posterior_path"]
-    )
-
-    print(
-        "Config saved to:",
-        run_paths["config_path"],
     )
 
     print(
