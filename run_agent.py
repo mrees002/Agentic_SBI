@@ -3,24 +3,44 @@ from agent.function_analyzer import (
     apply_analysis,
     validate_analysis,
 )
+
 from agent.prompts import (
+    ask_simulator_function_name,
+    ask_simulator_path,
     collect_missing_inputs,
     display_analysis,
     review_analysis,
 )
+
 from agent.simulator_agent import (
     SimulatorAgent,
 )
 
-from simulators import (
-    simulate_exponential_decay,
+from agent.simulator_loader import (
+    load_simulator,
 )
 
 
+
 def main():
-    agent = SimulatorAgent(
-        simulate_exponential_decay
+    simulator_path = ask_simulator_path()
+
+    function_name = (
+        ask_simulator_function_name()
     )
+
+    simulator = load_simulator(
+        simulator_path,
+        function_name,
+    )
+
+    print(
+        f"\nLoaded simulator "
+        f"{simulator.__name__!r} "
+        f"from {simulator_path!r}."
+    )
+
+    agent = SimulatorAgent(simulator)
 
     analysis = analyze_agent(agent)
 

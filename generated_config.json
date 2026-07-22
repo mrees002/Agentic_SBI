@@ -21,14 +21,14 @@
         }
     },
     "fixed_values": {
-        "noise_sd": 0.5
+        "noise_sd": 0.2
     },
     "fixed_value_path": {
         "time": "time.npy"
     },
     "observed_data_path": "observed_data.npy",
     "abc": {
-        "epsilon": 0.15,
+        "epsilon": 0.2,
         "n_simulations": 100000,
         "random_seed": 123
     },

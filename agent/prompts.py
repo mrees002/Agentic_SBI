@@ -481,3 +481,28 @@ def collect_missing_inputs(agent):
     )
 
     return agent
+
+def ask_simulator_path():
+    path = input(
+        "Path to simulator Python file: "
+    ).strip()
+
+    if not path:
+        raise ValueError(
+            "A simulator file path is required."
+        )
+
+    return path
+
+
+def ask_simulator_function_name():
+    name = input(
+        "Simulator function name: "
+    ).strip()
+
+    if not name:
+        raise ValueError(
+            "A simulator function name is required."
+        )
+
+    return name
