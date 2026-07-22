@@ -501,7 +501,7 @@ def collect_missing_inputs(agent):
             *names
         )
 
-        missing = agent.get_missing_fields()
+    missing = agent.get_missing_fields()
 
     if "fixed_values" in missing:
         fixed_values = {}
@@ -518,7 +518,9 @@ def collect_missing_inputs(agent):
             fixed_values[name] = value
 
             if source_path is not None:
-                fixed_value_path[name] = source_path
+                fixed_value_path[name] = (
+                    source_path
+                )
 
         if fixed_values:
             agent.set_fixed_values(
@@ -534,20 +536,14 @@ def collect_missing_inputs(agent):
     if "prior_bounds" in missing:
         bounds = {}
 
-        for name in missing[
-            "prior_bounds"
-        ]:
-            bounds[name] = (
-                ask_prior_bounds(name)
+        for name in missing["prior_bounds"]:
+            bounds[name] = ask_prior_bounds(
+                name
             )
 
-        agent.set_prior_bounds(**bounds)
-
-    missing = agent.get_missing_fields()
-
-    if "observed_data_path" in missing:
-        path = ask_observed_data_path()
-        agent.load_observed_data(path)
+        agent.set_prior_bounds(
+            **bounds
+        )
 
     missing = agent.get_missing_fields()
 
@@ -563,13 +559,56 @@ def collect_missing_inputs(agent):
             ask_n_simulations()
         )
 
-    missing = agent.get_missing_fields()
-
     agent.set_random_seed(
         ask_random_seed(
             default=agent.random_seed
         )
     )
+
+    generate_synthetic = (
+        ask_generate_synthetic_data()
+    )
+
+    if generate_synthetic:
+        true_values = (
+            ask_true_parameter_values(
+                agent.inferred_parameters
+            )
+        )
+
+        for name, value in true_values.items():
+            lower, upper = (
+                agent.prior_bounds[name]
+            )
+
+            if not lower <= value <= upper:
+                raise ValueError(
+                    f"True value for {name!r} "
+                    f"must be between {lower} "
+                    f"and {upper}."
+                )
+
+        agent.build_wrapper()
+
+        agent.generate_synthetic_observed_data(
+            true_values
+        )
+
+        print(
+            "Synthetic observed data generated "
+            f"with shape "
+            f"{agent.observed_data.shape}."
+        )
+
+    else:
+        missing = agent.get_missing_fields()
+
+        if "observed_data_path" in missing:
+            path = ask_observed_data_path()
+
+            agent.load_observed_data(
+                path
+            )
 
     return agent
 
@@ -624,3 +663,42 @@ def ask_config_path():
         )
 
     return path
+
+def ask_generate_synthetic_data():
+    while True:
+        response = input(
+            "Generate synthetic observed data? "
+            "[y/n]: "
+        ).strip().lower()
+
+        if response in {"y", "yes"}:
+            return True
+
+        if response in {"n", "no"}:
+            return False
+
+        print("Please enter y or n.")
+
+def ask_true_parameter_values(
+    parameter_names,
+):
+    true_values = {}
+
+    for name in parameter_names:
+        while True:
+            text = input(
+                f"True value for {name}: "
+            ).strip()
+
+            try:
+                value = float(text)
+            except ValueError:
+                print(
+                    "Please enter a valid number."
+                )
+                continue
+
+            true_values[name] = value
+            break
+
+    return true_values

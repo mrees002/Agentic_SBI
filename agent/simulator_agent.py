@@ -17,28 +17,32 @@ class SimulatorAgent:
             raise TypeError("simulator must be callable.")
 
         self.simulator = simulator
-        self.simulator_path = None
+        
         self.signature = inspect.signature(self.simulator)
 
         self.arguments = list(self.signature.parameters)
         self.rng_argument = None
         self.inferred_parameters = []
         self.parameter_container = None
-
-        self.observed_data_path = None
-        self.random_seed = 123
-
         self.fixed_values = {}
-        self.fixed_value_path = {}
         self.prior_bounds = {}
 
         self.observed_data = None
         self.config = None
         self.wrapper = None
 
+        # add true parameter values if needed
+        self.true_parameter_values = None
+
+        # add paths
+        self.fixed_value_path = {}
+        self.simulator_path = None
+        self.observed_data_path = None
+
         # abc settings
         self.epsilon = None
         self.n_simulations = None
+        self.random_seed = 123
         self.abc_function = abc_function
 
         # pre-set known functions
@@ -393,13 +397,45 @@ class SimulatorAgent:
         if missing_priors:
             missing["prior_bounds"] = missing_priors
 
-        if self.observed_data_path is None:
-            missing["observed_data_path"] = True
-
         if self.epsilon is None:
             missing["epsilon"] = True
 
         if self.n_simulations is None:
             missing["n_simulations"] = True
 
+        if self.observed_data is None:
+            missing["observed_data_path"] = True
+
         return missing
+
+    def generate_synthetic_observed_data(self, true_parameter_values):
+        if self.wrapper is None:
+            self.build_wrapper()
+
+        missing_parameters = [name for name in self.inferred_parameters if name not in true_parameter_values]
+
+        if missing_parameters:
+            raise ValueError(
+                "Missing true values for: "
+                f"{missing_parameters}"
+            )
+
+        rng = np.random.default_rng(self.random_seed + 1)
+
+        observed_data = self.wrapper(true_parameter_values, rng)
+
+        observed_data = np.asarray(observed_data)
+
+        if observed_data.size == 0:
+            raise ValueError("Synthetic observed data is empty.")
+
+        if not np.all(np.isfinite(observed_data)):
+            raise ValueError(
+                "Synthetic observed data contains "
+                "NaN or infinite values."
+            )
+
+        self.observed_data = observed_data
+        self.true_parameter_values = dict(true_parameter_values)
+
+        return self.observed_data
