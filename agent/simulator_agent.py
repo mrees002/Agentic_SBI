@@ -365,7 +365,7 @@ class SimulatorAgent:
         if not self.accepted_parameters:
             raise ValueError("No accepted parameters.")
         
-        plot_posterior(self.accepted_parameters, output_path)
+        plot_posterior(self.accepted_parameters, output_path = output_path)
 
     def get_missing_fields(self):
         missing = {}

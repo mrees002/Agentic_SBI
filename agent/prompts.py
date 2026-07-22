@@ -506,3 +506,30 @@ def ask_simulator_function_name():
         )
 
     return name
+
+def ask_use_config():
+    while True:
+        response = input(
+            "Use an existing config file? [y/n]: "
+        ).strip().lower()
+
+        if response in {"y", "yes"}:
+            return True
+
+        if response in {"n", "no"}:
+            return False
+
+        print("Please enter y or n.")
+
+
+def ask_config_path():
+    path = input(
+        "Path to config file: "
+    ).strip()
+
+    if not path:
+        raise ValueError(
+            "A config file path is required."
+        )
+
+    return path

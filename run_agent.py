@@ -5,11 +5,16 @@ from agent.function_analyzer import (
 )
 
 from agent.prompts import (
+    ask_config_path,
     ask_simulator_function_name,
     ask_simulator_path,
+    ask_use_config,
     collect_missing_inputs,
-    display_analysis,
     review_analysis,
+)
+
+from agent.config import(
+    load_config_file
 )
 
 from agent.simulator_agent import (
@@ -20,28 +25,70 @@ from agent.simulator_loader import (
     load_simulator,
 )
 
+from agent.results import(
+    save_results
+)
 
+from pathlib import Path
 
-def main():
+def create_agent_from_config(config_path):
+    config = load_config_file(config_path)
+
+    simulator_settings = config["simulator"]
+
+    simulator_path = simulator_settings.get(
+        "path"
+    )
+    simulator_name = simulator_settings.get(
+        "name"
+    )
+
+    if not simulator_path:
+        raise ValueError(
+            "The config does not contain "
+            "a simulator path."
+        )
+
+    if not simulator_name:
+        raise ValueError(
+            "The config does not contain "
+            "a simulator function name."
+        )
+
+    simulator = load_simulator(
+        simulator_path,
+        simulator_name,
+    )
+
+    agent = SimulatorAgent(simulator)
+
+    agent.set_simulator_path(
+        simulator_path
+    )
+
+    agent.configure_from_file(
+        config_path
+    )
+
+    return agent
+
+def create_agent_interactively():
     simulator_path = ask_simulator_path()
 
-    function_name = (
+    simulator_name = (
         ask_simulator_function_name()
     )
 
     simulator = load_simulator(
         simulator_path,
-        function_name,
-    )
-
-    print(
-        f"\nLoaded simulator "
-        f"{simulator.__name__!r} "
-        f"from {simulator_path!r}."
+        simulator_name,
     )
 
     agent = SimulatorAgent(simulator)
-    agent.set_simulator_path(simulator_path)
+
+    agent.set_simulator_path(
+        simulator_path
+    )
 
     analysis = analyze_agent(agent)
 
@@ -60,7 +107,43 @@ def main():
 
     collect_missing_inputs(agent)
 
-    agent.create_config("generated_config.json")
+    agent.create_config(
+        "generated_config.json"
+    )
+
+    return agent
+
+def main():
+    use_config = ask_use_config()
+
+    if use_config:
+        config_path = ask_config_path()
+
+        agent = create_agent_from_config(
+            config_path
+        )
+
+        print(
+            "\nConfiguration loaded."
+        )
+
+    else:
+        agent = create_agent_interactively()
+
+        config_path = "generated_config.json"
+
+        print(
+            "\nConfiguration created."
+        )
+
+    remaining = agent.get_missing_fields()
+
+    if remaining:
+        raise ValueError(
+            "Agent configuration is incomplete: "
+            f"{remaining}"
+        )
+
     agent.build_wrapper()
 
     validation_report = agent.test_abc()
@@ -72,20 +155,48 @@ def main():
         agent.run_abc()
     )
 
-    print("\nABC inference completed.")
-    print(
-        f"Accepted samples: "
-        f"{len(accepted_parameters)}"
+    accepted_count = len(
+        accepted_parameters
     )
+
+    print("\nABC inference completed.")
+
     print(
-        f"Acceptance rate: "
-        f"{len(accepted_parameters) / agent.n_simulations:.4f}"
+        "Accepted samples:",
+        accepted_count,
+    )
+
+    print(
+        "Acceptance rate:",
+        accepted_count
+        / agent.n_simulations,
+    )
+
+    results, results_path = save_results(
+        agent,
+        config_path,
+    )
+
+    print(
+        "Results saved to:", results_path
+    )
+
+    config_path = Path(config_path)
+
+    run_name = config_path.stem
+
+    if run_name.endswith("_config"):
+        run_name = run_name.removesuffix(
+            "_config"
+        )
+
+    posterior_path = config_path.with_name(
+        f"{run_name}_posterior.png"
     )
 
     agent.plot_posterior_hist(
-        "posterior_histograms.png"
+        posterior_path
     )
-
 
 if __name__ == "__main__":
     main()
