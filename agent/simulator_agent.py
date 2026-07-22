@@ -86,6 +86,15 @@ class SimulatorAgent:
         self.rng_argument = rng_argument
         return self.rng_argument
     
+    def set_random_seed(self, random_seed):
+        if not isinstance(random_seed, int):
+            raise ValueError("random_seed must be an integer.")
+        if random_seed < 0:
+            raise ValueError("random_seed must be zero or greater.")
+
+        self.random_seed = random_seed
+        return self.random_seed
+    
     def set_fixed_values(self, **values):
         new_fixed_values = {}
 

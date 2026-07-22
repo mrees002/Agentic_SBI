@@ -35,6 +35,19 @@ def ask_prior_bounds(parameter_name):
 
     return lower, upper
 
+def ask_random_seed(default=123):
+    text = input(f"Random seed [{default}]: ").strip()
+    if not text:
+        return default
+    try:
+        random_seed = int(text)
+    except ValueError as error:
+        raise ValueError("Random seed must be an integer.") from error
+
+    if random_seed < 0:
+        raise ValueError("Random seed must be zero or greater.")
+
+    return random_seed
 
 def ask_observed_data_path():
     return input("Path to observed data file: ").strip()
@@ -458,5 +471,13 @@ def collect_missing_inputs(agent):
         agent.set_n_sims(
             ask_n_simulations()
         )
+
+    missing = agent.get_missing_fields()
+
+    agent.set_random_seed(
+        ask_random_seed(
+            default=agent.random_seed
+        )
+    )
 
     return agent
