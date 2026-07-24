@@ -275,7 +275,8 @@ def main():
     validation_report = agent.test_abc()
 
     print("\nValidation report:")
-    print(validation_report)
+    for key, val in validation_report.items():
+        print(f"{key}: {val}")
 
     accepted_parameters, accepted_distances = (
         agent.run_abc()

@@ -245,7 +245,7 @@ class SimulatorAgent:
         self.wrapper = wrapper
         return self.wrapper
 
-    def test_abc(self):
+    def test_abc(self, n_checks=10):
         if self.observed_data is None:
             raise ValueError("Observed data has not been loaded.")
 
@@ -257,63 +257,124 @@ class SimulatorAgent:
 
         rng = np.random.default_rng(self.random_seed)
 
-        # 1. Sample parameters from the configured prior
+        observed_data = np.asarray(self.observed_data, dtype=float)
+
+        if observed_data.size == 0:
+            raise ValueError("Observed data is empty.")
+
+        if not np.all(np.isfinite(observed_data)):
+            raise ValueError("Observed data contains non-finite values.")
+
         try:
-            test_theta = self.prior.sample(rng)
+            observed_summary = np.asarray(self.summary_fn(observed_data), dtype=float)
         except Exception as error:
-            raise RuntimeError(f"Prior sampling failed: {error}") from error
+            raise RuntimeError(f"Observed summary calculation failed: {error}") from error
 
-        # 2. Execute the simulator
-        try:
-            simulated_data = self.wrapper(test_theta, rng)
-        except Exception as error:
-            raise RuntimeError(f"Simulator execution failed: {error}") from error
+        if observed_summary.size == 0:
+            raise ValueError("Summary function returned an empty observed summary.")
 
-        simulated_data = np.asarray(simulated_data)
-        observed_data = np.asarray(self.observed_data)
+        if not np.all(np.isfinite(observed_summary)):
+            raise ValueError("Observed summary contains non-finite values.")
 
-        # 3. Validate simulator output
-        if simulated_data.shape != observed_data.shape:
-            raise ValueError(
-                "Simulator output is incompatible with observed data: "
-                f"simulated shape {simulated_data.shape}, "
-                f"observed shape {observed_data.shape}."
-            )
-        
-        # 4. Run a very small ABC smoke test with automatic acceptance
-        try:
-            accepted_parameters, accepted_distances = self.abc_function(
-                prior=self.prior,
-                simulator=self.wrapper,
-                observed_data=self.observed_data,
-                summary_fn=self.summary_fn,
-                distance_fn=self.distance_fn,
-                epsilon=np.inf,
-                n_simulations=2,
-                rng=rng,
-            )
-        except Exception as error:
-            raise RuntimeError(f"ABC pipeline test failed: {error}") from error
+        distances = []
 
-        if len(accepted_parameters) == 0:
-            raise ValueError("ABC test produced no accepted parameter samples.")
+        for check_index in range(n_checks):
+            try:
+                test_theta = self.prior.sample(rng)
+            except Exception as error:
+                raise RuntimeError(
+                    f"Prior sampling failed on check "
+                    f"{check_index + 1}: {error}"
+                ) from error
 
-        if len(accepted_parameters) != len(accepted_distances):
-            raise ValueError(
-                "ABC returned inconsistent parameter and distance counts."
-            )
+            try:
+                simulated_data = self.wrapper(test_theta, rng)
+            except Exception as error:
+                raise RuntimeError(
+                    f"Simulator execution failed on check "
+                    f"{check_index + 1} for parameters "
+                    f"{test_theta}: {error}"
+                ) from error
 
-        accepted_distances = np.asarray(accepted_distances)
+            simulated_data = np.asarray(simulated_data, dtype=float)
 
-        if not np.all(np.isfinite(accepted_distances)):
-            raise ValueError("ABC returned non-finite distances.")
+            if simulated_data.shape != observed_data.shape:
+                raise ValueError(
+                    "Simulator output is incompatible with "
+                    "observed data on check "
+                    f"{check_index + 1}: simulated shape "
+                    f"{simulated_data.shape}, observed shape "
+                    f"{observed_data.shape}."
+                )
+
+            if simulated_data.size == 0:
+                raise ValueError("Simulator returned an empty output.")
+
+            if not np.all(np.isfinite(simulated_data)):
+                raise ValueError(
+                    "Simulator returned non-finite values "
+                    f"on check {check_index + 1}."
+                )
+
+            try:
+                simulated_summary = np.asarray(self.summary_fn(simulated_data), dtype=float)
+            except Exception as error:
+                raise RuntimeError(
+                    f"Summary calculation failed on check "
+                    f"{check_index + 1}: {error}"
+                ) from error
+
+            if simulated_summary.shape != observed_summary.shape:
+                raise ValueError(
+                    "Simulated summary is incompatible with "
+                    "the observed summary on check "
+                    f"{check_index + 1}: simulated shape "
+                    f"{simulated_summary.shape}, observed shape "
+                    f"{observed_summary.shape}."
+                )
+
+            if simulated_summary.size == 0:
+                raise ValueError("Summary function returned an empty result.")
+
+            if not np.all(np.isfinite(simulated_summary)):
+                raise ValueError(
+                    "Summary function returned non-finite "
+                    f"values on check {check_index + 1}."
+                )
+
+            try:
+                distance = float(
+                    self.distance_fn(observed_summary, simulated_summary)
+                )
+            except Exception as error:
+                raise RuntimeError(
+                    f"Distance calculation failed on check "
+                    f"{check_index + 1}: {error}"
+                ) from error
+
+            if not np.isfinite(distance):
+                raise ValueError(
+                    "Distance function returned a non-finite "
+                    f"value on check {check_index + 1}."
+                )
+
+            distances.append(distance)
 
         return {
             "success": True,
-            "sampled_parameters": test_theta,
-            "simulated_shape": simulated_data.shape,
+            "checks_completed": n_checks,
+            "parameter_names": list(
+                self.inferred_parameters
+            ),
+            "simulated_shape": observed_data.shape,
             "observed_shape": observed_data.shape,
-            "accepted_samples": len(accepted_parameters),
+            "summary_shape": observed_summary.shape,
+            "minimum_distance": float(
+                np.min(distances)
+            ),
+            "maximum_distance": float(
+                np.max(distances)
+            ),
         }
 
     def run_abc(self):
