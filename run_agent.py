@@ -204,7 +204,7 @@ def main():
     use_config = ask_use_config()
 
     if use_config:
-        agent = (
+        agent, source_config_path = (
             create_agent_from_config_interactively()
             )
 

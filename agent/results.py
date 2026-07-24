@@ -10,6 +10,8 @@ def create_results_summary(
 ):
     config_path = Path(config_path)
 
+    _validate_completed_run(agent)
+
     accepted_count = len(
         agent.accepted_parameters
     )
