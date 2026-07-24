@@ -32,18 +32,25 @@ def create_run_directory(
     run_directory.mkdir()
 
     return {
-        "directory": run_directory,
+        "run_directory": run_directory,
         "config_path": (
             run_directory / "config.json"
-        ),
-        "synthetic_config_path": (
-            run_directory / "synthetic_config.json"
         ),
         "results_path": (
             run_directory / "results.json"
         ),
-        "posterior_path": (
+        "posterior_plot_path": (
             run_directory / "posterior.png"
+        ),
+        "distance_plot_path": (
+            run_directory / "distances.png"
+        ),
+        "observed_data_path": (
+            run_directory / "observed_data.npy"
+        ),
+        "synthetic_config_path": (
+            run_directory
+            / "synthetic_config.json"
         ),
     }
 

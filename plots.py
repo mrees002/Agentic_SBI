@@ -28,6 +28,30 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
         plt.savefig(output_path)
 
     plt.show()
+    plt.close()
+
+def plot_distances(accepted_distances, epsilon=None, output_path=None):
+    """Plot the distribution of accepted ABC distances."""
+    distances = np.asarray(accepted_distances, dtype=float)
+
+    plt.figure(figsize=(7, 4))
+
+    plt.hist(distances, bins=30, alpha=0.7, label="Accepted distances")
+
+    if epsilon is not None:
+        plt.axvline(epsilon, color="red", linestyle="--", label=f"Epsilon = {epsilon:g}")
+
+    plt.title("Distribution of Accepted ABC Distances")
+    plt.xlabel("Distance")
+    plt.ylabel("Accepted samples")
+    plt.legend()
+    plt.tight_layout()
+
+    if output_path is not None:
+        plt.savefig(output_path)
+
+    plt.show()
+    plt.close()
 
 
 def plot_observed_data(x, observed_data, true_intercept, true_slope, output_path=None):

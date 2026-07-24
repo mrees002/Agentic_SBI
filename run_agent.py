@@ -237,7 +237,7 @@ def main():
     save_run_data(
         agent=agent,
         run_directory=(
-            run_paths["directory"]
+            run_paths["run_directory"]
         ),
     )
 
@@ -262,7 +262,7 @@ def main():
 
     print(
         "Run directory:",
-        run_paths["directory"],
+        run_paths["run_directory"],
     )
 
     print(
@@ -306,7 +306,11 @@ def main():
     )
 
     agent.plot_posterior_hist(
-        run_paths["posterior_path"]
+        run_paths["posterior_plot_path"]
+    )
+
+    agent.plot_distance_hist(
+        run_paths["distance_plot_path"]
     )
 
     print(
@@ -315,8 +319,8 @@ def main():
     )
 
     print(
-        "Posterior plot saved in:",
-        run_paths["directory"],
+        "Plots saved in:",
+        run_paths["run_directory"],
     )
 
 if __name__ == "__main__":

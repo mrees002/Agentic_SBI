@@ -5,7 +5,7 @@ from prior import UniformPrior
 from distance import euclidean_distance
 from summaries import mean_std_summary
 from inference import abc_function
-from plots import plot_posterior
+from plots import plot_posterior, plot_distances
 
 import numpy as np
 
@@ -433,7 +433,14 @@ class SimulatorAgent:
         if not self.accepted_parameters:
             raise ValueError("No accepted parameters.")
         
-        plot_posterior(self.accepted_parameters, true_values = self.true_parameter_values ,output_path = output_path)
+        plot_posterior(self.accepted_parameters, true_values = self.true_parameter_values, output_path = output_path)
+
+    def plot_distance_hist(self, output_path = None):
+
+        if self.accepted_distances is None:
+            raise ValueError("No accepted distances.")
+
+        plot_distances(self.accepted_distances, epsilon = self.epsilon, output_path = output_path)
 
     def get_missing_fields(self):
         missing = {}
