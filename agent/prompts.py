@@ -18,7 +18,6 @@ def ask_inferred_parameters():
 
     return names
 
-
 def ask_prior_bounds(parameter_name):
     while True:
         lower = _ask_float(
@@ -253,6 +252,7 @@ def _ask_generated_array(name):
             f"Generated {name} with shape "
             f"{values.shape}."
         )
+        print()
 
         return values, None
 
@@ -284,15 +284,11 @@ def _ask_positive_integer(message):
 
         return value
 
-
 def display_analysis(analysis):
     print(
-        "\nProposed simulator classification"
+        "\nProposed simulator classification:"
     )
-    print(
-        "---------------------------------"
-    )
-
+    
     print(
         f"RNG argument: "
         f"{analysis['rng_argument']}"
@@ -361,7 +357,6 @@ def display_analysis(analysis):
         for warning in analysis["uncertain"]:
             print(f"  {warning}")
 
-
 def review_analysis(analysis):
     while True:
         display_analysis(analysis)
@@ -379,7 +374,6 @@ def review_analysis(analysis):
             continue
 
         correct_analysis(analysis)
-
 
 def correct_analysis(analysis):
     if (
@@ -481,7 +475,6 @@ def correct_analysis(analysis):
     else:
         print("Invalid choice.")
 
-
 def get_analysis_category(analysis, name):
     if name in analysis["fixed_values"]:
         return "fixed value from default"
@@ -502,7 +495,6 @@ def get_analysis_category(analysis, name):
         return "parameter inside container"
 
     return None
-
 
 def move_to_fixed_input(analysis, name):
     _remove_from_direct_role_lists(
@@ -530,7 +522,6 @@ def move_to_fixed_input(analysis, name):
     print(
         f"{name!r} moved to fixed inputs."
     )
-
 
 def move_to_inferred(analysis, name):
     _remove_from_direct_role_lists(
@@ -560,7 +551,6 @@ def move_to_inferred(analysis, name):
         "parameters."
     )
 
-
 def _remove_from_direct_role_lists(
     analysis,
     name,
@@ -580,7 +570,6 @@ def _remove_from_direct_role_lists(
         if name in analysis[category]:
             analysis[category].remove(name)
 
-
 def _refresh_inferred_parameters(analysis):
     combined = (
         list(analysis["container_parameters"])
@@ -594,7 +583,6 @@ def _refresh_inferred_parameters(analysis):
     analysis["inferred_parameters"] = (
         list(dict.fromkeys(combined))
     )
-
 
 def collect_missing_inputs(agent):
     missing = agent.get_missing_fields()
@@ -645,6 +633,7 @@ def collect_missing_inputs(agent):
             bounds[name] = ask_prior_bounds(
                 name
             )
+            print()
 
         agent.set_prior_bounds(
             **bounds
@@ -670,11 +659,14 @@ def collect_missing_inputs(agent):
         )
     )
 
+    print()
+
     generate_synthetic = (
         ask_generate_synthetic_data()
     )
 
     if generate_synthetic:
+        print()
         true_values = {}
 
         for name in agent.inferred_parameters:
@@ -702,6 +694,8 @@ def collect_missing_inputs(agent):
         agent.generate_synthetic_observed_data(
             true_values
         )
+
+        print()
 
         print(
             "Synthetic observed data generated "
@@ -789,7 +783,6 @@ def ask_use_config():
             return False
 
         print("Please enter y or n.")
-
 
 def ask_config_path():
     while True:
