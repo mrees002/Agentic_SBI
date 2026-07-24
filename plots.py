@@ -32,66 +32,33 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
     else:
         plt.show()
 
-def plot_parameter_pairs(
-    accepted_parameters,
-    output_path=None,
-):
+def plot_parameter_pairs(accepted_parameters, output_path=None):
     """Plot pairwise relationships between accepted ABC parameters."""
+    names = list(accepted_parameters[0].keys())
+    pairs = list(combinations(names, 2))
 
-    names = list(
-        accepted_parameters[0].keys()
-    )
+    plt.figure(figsize=(7, 4 * len(pairs)))
 
-    pairs = list(
-        combinations(names, 2)
-    )
-
-    plt.figure(
-        figsize=(7, 4 * len(pairs))
-    )
-
-    for index, (
-        x_name,
-        y_name,
-    ) in enumerate(pairs, start=1):
-        x_values = [
-            sample[x_name]
-            for sample in accepted_parameters
-        ]
-
-        y_values = [
-            sample[y_name]
-            for sample in accepted_parameters
-        ]
-
-        plt.subplot(
-            len(pairs),
-            1,
-            index,
-        )
-
-        plt.scatter(
-            x_values,
-            y_values,
-            alpha=0.4,
-            s=12,
-        )
+    for index, (x_name, y_name) in enumerate(pairs, start=1):
+        x_values = [sample[x_name] for sample in accepted_parameters]
+        y_values = [sample[y_name] for sample in accepted_parameters]
+        plt.subplot(len(pairs), 1, index)
+        plt.scatter(x_values, y_values, alpha=0.4, s=12)
 
         plt.title(
             f"Posterior Relationship: "
             f"{x_name} and {y_name}"
         )
+        
         plt.xlabel(x_name)
         plt.ylabel(y_name)
 
     plt.tight_layout()
 
     if output_path is not None:
-        plt.savefig(
-            output_path,
-            bbox_inches="tight",
-        )
+        plt.savefig(output_path)
         plt.close()
+
     else:
         plt.show()
 
