@@ -133,59 +133,72 @@ def create_agent_from_config_interactively():
         return agent, config_path
 
 def create_agent_interactively():
-    simulator_path = ask_simulator_path()
-
     while True:
-        simulator_name = (
-            ask_simulator_function_name()
-        )
+        simulator_path = ask_simulator_path()
 
-        try:
-            simulator = load_simulator(
-                simulator_path,
-                simulator_name,
+        while True:
+            simulator_name = input(
+                "Simulator function name "
+                "or 'back' to choose another file: "
+            ).strip()
+
+            if simulator_name.lower() == "back":
+                break
+
+            if not simulator_name:
+                print(
+                    "A simulator function name "
+                    "is required."
+                )
+                continue
+
+            if not simulator_name.isidentifier():
+                print(
+                    "Function name must be a valid "
+                    "Python identifier."
+                )
+                continue
+
+            try:
+                simulator = load_simulator(
+                    simulator_path,
+                    simulator_name,
+                )
+            except (
+                AttributeError,
+                TypeError,
+                ValueError,
+            ) as error:
+                print(
+                    "\nCould not load simulator:"
+                )
+                print(error)
+                print()
+                continue
+
+            agent = SimulatorAgent(simulator)
+            agent.set_simulator_path(
+                simulator_path
             )
-        except (
-            AttributeError,
-            TypeError,
-            ValueError,
-        ) as error:
-            print(
-                "\nCould not load simulator:"
+
+            analysis = analyze_agent(agent)
+
+            confirmed_analysis = (
+                review_analysis(analysis)
             )
-            print(error)
-            print(
-                "Please enter the function "
-                "name again.\n"
+
+            validate_analysis(
+                confirmed_analysis
             )
-            continue
 
-        break
+            apply_analysis(
+                agent,
+                confirmed_analysis,
+            )
 
-    agent = SimulatorAgent(simulator)
+            collect_missing_inputs(agent)
 
-    agent.set_simulator_path(
-        simulator_path
-    )
-
-    analysis = analyze_agent(agent)
-
-    confirmed_analysis = review_analysis(
-        analysis
-    )
-
-    validate_analysis(
-        confirmed_analysis
-    )
-
-    apply_analysis(
-        agent,
-        confirmed_analysis,
-    )
-
-    collect_missing_inputs(agent)
-
-    return agent
+            return agent
 
 def main():
     use_config = ask_use_config()
