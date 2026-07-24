@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 
 
 def ask_inferred_parameters():
@@ -19,44 +20,137 @@ def ask_inferred_parameters():
 
 
 def ask_prior_bounds(parameter_name):
-    lower = float(
-        input(
+    while True:
+        lower = _ask_float(
             f"Lower prior bound for "
             f"{parameter_name}: "
         )
-    )
 
-    upper = float(
-        input(
+        upper = _ask_float(
             f"Upper prior bound for "
             f"{parameter_name}: "
         )
-    )
 
-    return lower, upper
+        if upper <= lower:
+            print(
+                "Upper bound must be greater "
+                "than lower bound."
+            )
+            continue
+
+        return lower, upper
 
 def ask_random_seed(default=123):
-    text = input(f"Random seed [{default}]: ").strip()
-    if not text:
-        return default
-    try:
-        random_seed = int(text)
-    except ValueError as error:
-        raise ValueError("Random seed must be an integer.") from error
+    while True:
+        text = input(
+            f"Random seed [{default}]: "
+        ).strip()
 
-    if random_seed < 0:
-        raise ValueError("Random seed must be zero or greater.")
+        if not text:
+            return default
 
-    return random_seed
+        try:
+            random_seed = int(text)
+        except ValueError:
+            print(
+                "Random seed must be an integer."
+            )
+            continue
+
+        if random_seed < 0:
+            print(
+                "Random seed must be zero "
+                "or greater."
+            )
+            continue
+
+        return random_seed
 
 def ask_observed_data_path():
-    return input("Path to observed data file: ").strip()
+    while True:
+        path = input(
+            "Path to observed data file: "
+        ).strip()
+
+        if not path:
+            print(
+                "An observed-data path "
+                "is required."
+            )
+            continue
+
+        if not path.lower().endswith(".npy"):
+            print(
+                "Observed data must be "
+                "a .npy file."
+            )
+            continue
+
+        try:
+            data = np.load(
+                path,
+                allow_pickle=False,
+            )
+        except (OSError, ValueError) as error:
+            print(
+                "Could not load observed data: "
+                f"{error}"
+            )
+            continue
+
+        if data.size == 0:
+            print(
+                "Observed-data array is empty."
+            )
+            continue
+
+        if not np.all(np.isfinite(data)):
+            print(
+                "Observed data contains NaN "
+                "or infinite values."
+            )
+            continue
+
+        return path
 
 def ask_epsilon():
-    return float(input("ABC epsilon: "))
+    while True:
+        value = _ask_float(
+            "ABC epsilon: "
+        )
+
+        if value <= 0:
+            print(
+                "ABC epsilon must be greater "
+                "than zero."
+            )
+            continue
+
+        return value
 
 def ask_n_simulations():
-    return int(input("Number of simulations: "))
+    while True:
+        text = input(
+            "Number of simulations: "
+        ).strip()
+
+        try:
+            value = int(text)
+        except ValueError:
+            print(
+                "Number of simulations must "
+                "be an integer."
+            )
+            continue
+
+        if value <= 0:
+            print(
+                "Number of simulations must "
+                "be greater than zero."
+            )
+            continue
+
+        return value
 
 def ask_fixed_value(name):
     while True:
@@ -122,34 +216,45 @@ def _ask_array_file(name):
         return value, path
 
 def _ask_generated_array(name):
-    print(
-        f"\nGenerate an evenly spaced array for {name}."
-    )
-
-    start = _ask_float("Start value: ")
-    stop = _ask_float("Stop value: ")
-    number_of_points = _ask_positive_integer(
-        "Number of points: "
-    )
-
-    if stop <= start:
-        raise ValueError(
-            "Stop value must be greater "
-            "than start value."
+    while True:
+        print(
+            f"\nGenerate an evenly spaced "
+            f"array for {name}."
         )
 
-    values = np.linspace(
-        start,
-        stop,
-        number_of_points,
-    )
+        start = _ask_float(
+            "Start value: "
+        )
 
-    print(
-        f"Generated {name} with shape "
-        f"{values.shape}."
-    )
+        stop = _ask_float(
+            "Stop value: "
+        )
 
-    return values, None
+        number_of_points = (
+            _ask_positive_integer(
+                "Number of points: "
+            )
+        )
+
+        if stop <= start:
+            print(
+                "Stop value must be greater "
+                "than start value."
+            )
+            continue
+
+        values = np.linspace(
+            start,
+            stop,
+            number_of_points,
+        )
+
+        print(
+            f"Generated {name} with shape "
+            f"{values.shape}."
+        )
+
+        return values, None
 
 def _ask_float(message):
     while True:
@@ -570,19 +675,23 @@ def collect_missing_inputs(agent):
     )
 
     if generate_synthetic:
-        true_values = (
-            ask_true_parameter_values(
-                agent.inferred_parameters
-            )
-        )
+        true_values = {}
 
-        for name, value in true_values.items():
+        for name in agent.inferred_parameters:
             lower, upper = (
                 agent.prior_bounds[name]
             )
 
-            if not lower <= value <= upper:
-                raise ValueError(
+            while True:
+                value = ask_true_parameter_value(
+                    name
+                )
+
+                if lower <= value <= upper:
+                    true_values[name] = value
+                    break
+
+                print(
                     f"True value for {name!r} "
                     f"must be between {lower} "
                     f"and {upper}."
@@ -613,29 +722,59 @@ def collect_missing_inputs(agent):
     return agent
 
 def ask_simulator_path():
-    path = input(
-        "Path to simulator Python file: "
-    ).strip()
+    while True:
+        path = input(
+            "Path to simulator Python file: "
+        ).strip()
 
-    if not path:
-        raise ValueError(
-            "A simulator file path is required."
-        )
+        if not path:
+            print(
+                "A simulator file path "
+                "is required."
+            )
+            continue
 
-    return path
+        simulator_path = Path(
+            path
+        ).expanduser()
 
+        if simulator_path.suffix.lower() != ".py":
+            print(
+                "Simulator file must end "
+                "in .py."
+            )
+            continue
+
+        if not simulator_path.is_file():
+            print(
+                "Simulator file was not found: "
+                f"{simulator_path}"
+            )
+            continue
+
+        return str(simulator_path)
 
 def ask_simulator_function_name():
-    name = input(
-        "Simulator function name: "
-    ).strip()
+    while True:
+        name = input(
+            "Simulator function name: "
+        ).strip()
 
-    if not name:
-        raise ValueError(
-            "A simulator function name is required."
-        )
+        if not name:
+            print(
+                "A simulator function name "
+                "is required."
+            )
+            continue
 
-    return name
+        if not name.isidentifier():
+            print(
+                "Function name must be a valid "
+                "Python identifier."
+            )
+            continue
+
+        return name
 
 def ask_use_config():
     while True:
@@ -653,16 +792,37 @@ def ask_use_config():
 
 
 def ask_config_path():
-    path = input(
-        "Path to config file: "
-    ).strip()
+    while True:
+        path = input(
+            "Path to config file: "
+        ).strip()
 
-    if not path:
-        raise ValueError(
-            "A config file path is required."
-        )
+        if not path:
+            print(
+                "A config file path "
+                "is required."
+            )
+            continue
 
-    return path
+        config_path = Path(
+            path
+        ).expanduser()
+
+        if config_path.suffix.lower() != ".json":
+            print(
+                "Config file must end "
+                "in .json."
+            )
+            continue
+
+        if not config_path.is_file():
+            print(
+                "Config file was not found: "
+                f"{config_path}"
+            )
+            continue
+
+        return str(config_path)
 
 def ask_generate_synthetic_data():
     while True:
@@ -679,26 +839,10 @@ def ask_generate_synthetic_data():
 
         print("Please enter y or n.")
 
-def ask_true_parameter_values(
-    parameter_names,
+def ask_true_parameter_value(
+    parameter_name,
 ):
-    true_values = {}
-
-    for name in parameter_names:
-        while True:
-            text = input(
-                f"True value for {name}: "
-            ).strip()
-
-            try:
-                value = float(text)
-            except ValueError:
-                print(
-                    "Please enter a valid number."
-                )
-                continue
-
-            true_values[name] = value
-            break
-
-    return true_values
+    return _ask_float(
+        f"True value for "
+        f"{parameter_name}: "
+    )

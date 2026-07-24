@@ -104,17 +104,63 @@ def create_agent_from_config(config_path):
 
     return agent
 
+def create_agent_from_config_interactively():
+    while True:
+        config_path = ask_config_path()
+
+        try:
+            agent = create_agent_from_config(
+                config_path
+            )
+        except (
+            FileNotFoundError,
+            KeyError,
+            ImportError,
+            AttributeError,
+            TypeError,
+            ValueError,
+        ) as error:
+            print(
+                "\nCould not load configuration:"
+            )
+            print(error)
+            print(
+                "Please select a config "
+                "file again.\n"
+            )
+            continue
+
+        return agent, config_path
+
 def create_agent_interactively():
     simulator_path = ask_simulator_path()
 
-    simulator_name = (
-        ask_simulator_function_name()
-    )
+    while True:
+        simulator_name = (
+            ask_simulator_function_name()
+        )
 
-    simulator = load_simulator(
-        simulator_path,
-        simulator_name,
-    )
+        try:
+            simulator = load_simulator(
+                simulator_path,
+                simulator_name,
+            )
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+        ) as error:
+            print(
+                "\nCould not load simulator:"
+            )
+            print(error)
+            print(
+                "Please enter the function "
+                "name again.\n"
+            )
+            continue
+
+        break
 
     agent = SimulatorAgent(simulator)
 
@@ -145,13 +191,9 @@ def main():
     use_config = ask_use_config()
 
     if use_config:
-        source_config_path = (
-            ask_config_path()
-        )
-
-        agent = create_agent_from_config(
-            source_config_path
-        )
+        agent = (
+            create_agent_from_config_interactively()
+            )
 
         print(
             "\nConfiguration loaded."

@@ -95,7 +95,7 @@ def load_config_file(config_path):
             f"Config file not found: {config_path}"
         )
 
-    if config_path.suffix != ".json":
+    if config_path.suffix.lower() != ".json":
         raise ValueError(
             "Config file must be a JSON file."
         )
