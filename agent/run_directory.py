@@ -42,8 +42,9 @@ def create_run_directory(
         "posterior_plot_path": (
             run_directory / "posterior.png"
         ),
-        "distance_plot_path": (
-            run_directory / "distances.png"
+        "parameter_pairs_plot_path": (
+            run_directory
+            / "parameter_pairs.png"
         ),
         "observed_data_path": (
             run_directory / "observed_data.npy"

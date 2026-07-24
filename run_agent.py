@@ -309,8 +309,8 @@ def main():
         run_paths["posterior_plot_path"]
     )
 
-    agent.plot_distance_hist(
-        run_paths["distance_plot_path"]
+    agent.plot_parameter_pairs(
+        run_paths["parameter_pairs_plot_path"]
     )
 
     print(

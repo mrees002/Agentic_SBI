@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from itertools import combinations
 
 
 def plot_posterior(accepted_parameters, true_values=None, output_path=None):
@@ -31,27 +32,66 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
     else:
         plt.show()
 
-def plot_distances(accepted_distances, epsilon=None, output_path=None):
-    """Plot the distribution of accepted ABC distances."""
-    distances = np.asarray(accepted_distances, dtype=float)
+def plot_parameter_pairs(
+    accepted_parameters,
+    output_path=None,
+):
+    """Plot pairwise relationships between accepted ABC parameters."""
 
-    plt.figure(figsize=(7, 4))
+    names = list(
+        accepted_parameters[0].keys()
+    )
 
-    plt.hist(distances, bins=30, alpha=0.7, label="Accepted distances")
+    pairs = list(
+        combinations(names, 2)
+    )
 
-    if epsilon is not None:
-        plt.axvline(epsilon, color="red", linestyle="--", label=f"Epsilon = {epsilon:g}")
+    plt.figure(
+        figsize=(7, 4 * len(pairs))
+    )
 
-    plt.title("Distribution of Accepted ABC Distances")
-    plt.xlabel("Distance")
-    plt.ylabel("Accepted samples")
-    plt.legend()
+    for index, (
+        x_name,
+        y_name,
+    ) in enumerate(pairs, start=1):
+        x_values = [
+            sample[x_name]
+            for sample in accepted_parameters
+        ]
+
+        y_values = [
+            sample[y_name]
+            for sample in accepted_parameters
+        ]
+
+        plt.subplot(
+            len(pairs),
+            1,
+            index,
+        )
+
+        plt.scatter(
+            x_values,
+            y_values,
+            alpha=0.4,
+            s=12,
+        )
+
+        plt.title(
+            f"Posterior Relationship: "
+            f"{x_name} and {y_name}"
+        )
+        plt.xlabel(x_name)
+        plt.ylabel(y_name)
+
     plt.tight_layout()
 
     if output_path is not None:
-        plt.savefig(output_path)
+        plt.savefig(
+            output_path,
+            bbox_inches="tight",
+        )
         plt.close()
-
     else:
         plt.show()
 
