@@ -26,9 +26,10 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
 
     if output_path is not None:
         plt.savefig(output_path)
+        plt.close()
 
-    plt.show()
-    plt.close()
+    else:
+        plt.show()
 
 def plot_distances(accepted_distances, epsilon=None, output_path=None):
     """Plot the distribution of accepted ABC distances."""
@@ -49,9 +50,10 @@ def plot_distances(accepted_distances, epsilon=None, output_path=None):
 
     if output_path is not None:
         plt.savefig(output_path)
+        plt.close()
 
-    plt.show()
-    plt.close()
+    else:
+        plt.show()
 
 
 def plot_observed_data(x, observed_data, true_intercept, true_slope, output_path=None):
