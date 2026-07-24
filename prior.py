@@ -3,6 +3,7 @@ import numpy as np
 class UniformPrior:
     def __init__(self, bounds):
         # store the bounds, which should be a dictionary with parameter names as keys and (lower, upper) tuples as values
+        # i.e. {intercept: (-5, 5), ...}
         for name, interval in bounds.items():
             if len(interval) != 2:
                 raise ValueError(
@@ -47,7 +48,8 @@ class UniformPrior:
 class GaussianPrior:
 
     def __init__(self, means, stds):
-        
+        # store the means and standard deviations which should be dictionaries with parameter names as keys and values corresponding
+        # i.e. means = {intercept: 1, slope: 2}
         self.means = means
         self.stds = stds
 
