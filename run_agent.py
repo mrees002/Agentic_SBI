@@ -204,7 +204,7 @@ def create_agent_interactively():
                 print(
                     "\nWarning: this simulator does not "
                     "accept an RNG argument. Repeated runs "
-                    "may not be reproducible."
+                    "may not be reproducible.\n"
                 )
 
             configured_agent = collect_missing_inputs(
