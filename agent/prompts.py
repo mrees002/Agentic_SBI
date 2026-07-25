@@ -699,19 +699,45 @@ def collect_missing_inputs(agent):
                 break
 
             except Exception as error:
-                print(
-                    "\nSynthetic observed-data "
-                    "generation failed:"
-                )
-                print(error)
+                synthetic_report = {
+                    "success": False,
+                    "failure_type": (
+                        "synthetic_data_generation"
+                    ),
+                    "message": str(error),
+                    "check_number": None,
+                    "parameters": true_values,
+                    "possible_adjustments": [
+                        "fixed_values",
+                        "true_values",
+                    ],
+                }
 
-                print(
-                    "\nThe problem may be related "
-                    "to a fixed value or to the "
-                    "simulator code."
+                adjustment = ask_validation_adjustment(
+                    agent,
+                    synthetic_report,
                 )
 
-                revised = revise_fixed_value(agent)
+                if adjustment is None:
+                    print(
+                        "\nSynthetic-data setup "
+                        "cancelled."
+                    )
+                    return None
+
+                if adjustment == "fixed_values":
+                    revised = revise_fixed_value(agent)
+
+                elif adjustment == "true_values":
+                    revised = (
+                        revise_true_parameter_value(
+                            agent,
+                            true_values,
+                        )
+                    )
+
+                else:
+                    revised = False
 
                 if not revised:
                     print(
@@ -923,12 +949,9 @@ def ask_validation_adjustment(
         return None
 
     labels = {
-        "prior_bounds": (
-            "Revise prior bounds"
-        ),
-        "fixed_values": (
-            "Revise a fixed value"
-        ),
+        "prior_bounds": "Revise prior bounds",
+        "fixed_values": "Revise a fixed value",
+        "true_values": "Revise a true parameter value",
     }
 
     print("\nPossible changes:")
@@ -1074,6 +1097,54 @@ def revise_fixed_value(agent):
 
     print(
         f"\nUpdated fixed value {name}."
+    )
+
+    return True
+
+def revise_true_parameter_value(
+    agent,
+    true_values,
+):
+    print("\nCurrent true parameter values:")
+
+    for name, value in true_values.items():
+        print(f"  {name}: {value}")
+
+    while True:
+        name = input(
+            "True parameter to revise "
+            "or 'cancel': "
+        ).strip()
+
+        if name.lower() == "cancel":
+            return False
+
+        if name not in true_values:
+            print(
+                "Please enter one of the "
+                "listed parameter names."
+            )
+            continue
+
+        break
+
+    lower, upper = agent.prior_bounds[name]
+
+    while True:
+        value = ask_true_parameter_value(name)
+
+        if lower <= value <= upper:
+            true_values[name] = value
+            break
+
+        print(
+            f"True value for {name!r} "
+            f"must be between {lower} "
+            f"and {upper}."
+        )
+
+    print(
+        f"\nUpdated true value for {name}."
     )
 
     return True

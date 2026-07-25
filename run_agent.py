@@ -319,9 +319,11 @@ def main():
         run_paths["config_path"],
     )
 
-    accepted_parameters, accepted_distances = (
-        agent.run_abc()
-    )
+    try:
+        accepted_parameters, accepted_distances = agent.run_abc()
+    except ValueError as error:
+        print(f"\nABC inference unsuccessful: {error}")
+        return
 
     accepted_count = len(
         accepted_parameters
