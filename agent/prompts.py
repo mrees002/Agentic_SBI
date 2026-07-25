@@ -689,11 +689,36 @@ def collect_missing_inputs(agent):
                     f"and {upper}."
                 )
 
-        agent.build_wrapper()
+        while True:
+            agent.build_wrapper()
 
-        agent.generate_synthetic_observed_data(
-            true_values
-        )
+            try:
+                agent.generate_synthetic_observed_data(
+                    true_values
+                )
+                break
+
+            except Exception as error:
+                print(
+                    "\nSynthetic observed-data "
+                    "generation failed:"
+                )
+                print(error)
+
+                print(
+                    "\nThe problem may be related "
+                    "to a fixed value or to the "
+                    "simulator code."
+                )
+
+                revised = revise_fixed_value(agent)
+
+                if not revised:
+                    print(
+                        "\nSynthetic-data setup "
+                        "cancelled."
+                    )
+                    return None
 
         print()
 
@@ -839,3 +864,216 @@ def ask_true_parameter_value(
         f"True value for "
         f"{parameter_name}: "
     )
+
+def ask_validation_adjustment(
+    agent,
+    validation_report,
+):
+    print("\nValidation failed.")
+
+    print(
+        "Failure type:",
+        validation_report["failure_type"],
+    )
+
+    check_number = validation_report.get(
+        "check_number"
+    )
+
+    if check_number is not None:
+        print(
+            "Validation check:",
+            check_number,
+        )
+
+    print(
+        "Message:",
+        validation_report["message"],
+    )
+
+    parameters = validation_report.get(
+        "parameters"
+    )
+
+    if parameters:
+        print("\nFailing parameter draw:")
+
+        for name, value in parameters.items():
+            print(f"  {name}: {value}")
+
+    adjustments = list(
+        validation_report.get(
+            "possible_adjustments",
+            [],
+        )
+    )
+
+    if (
+        "fixed_values" in adjustments
+        and not agent.fixed_values
+    ):
+        adjustments.remove("fixed_values")
+
+    if not adjustments:
+        print(
+            "\nThis failure cannot be "
+            "adjusted through the current "
+            "configuration prompts."
+        )
+        return None
+
+    labels = {
+        "prior_bounds": (
+            "Revise prior bounds"
+        ),
+        "fixed_values": (
+            "Revise a fixed value"
+        ),
+    }
+
+    print("\nPossible changes:")
+
+    for index, adjustment in enumerate(
+        adjustments,
+        start=1,
+    ):
+        print(
+            f"  {index}. "
+            f"{labels[adjustment]}"
+        )
+
+    print("  0. Cancel")
+
+    while True:
+        selection = input(
+            "Selection: "
+        ).strip()
+
+        if selection == "0":
+            return None
+
+        try:
+            selected_index = (
+                int(selection) - 1
+            )
+        except ValueError:
+            print(
+                "Please enter a valid option."
+            )
+            continue
+
+        if not (
+            0
+            <= selected_index
+            < len(adjustments)
+        ):
+            print(
+                "Please enter a valid option."
+            )
+            continue
+
+        return adjustments[selected_index]
+
+def revise_prior_bounds(agent):
+    print("\nCurrent prior bounds:")
+
+    for name, bounds in (
+        agent.prior_bounds.items()
+    ):
+        print(
+            f"  {name}: "
+            f"[{bounds[0]}, {bounds[1]}]"
+        )
+
+    while True:
+        parameter_name = input(
+            "Parameter to revise: "
+        ).strip()
+
+        if (
+            parameter_name
+            not in agent.prior_bounds
+        ):
+            print(
+                "Please enter one of the "
+                "listed parameter names."
+            )
+            continue
+
+        break
+
+    new_bounds = dict(
+        agent.prior_bounds
+    )
+
+    new_bounds[parameter_name] = (
+        ask_prior_bounds(parameter_name)
+    )
+
+    agent.set_prior_bounds(
+        **new_bounds
+    )
+
+    print(
+        f"Updated prior bounds for "
+        f"{parameter_name}."
+    )
+
+def revise_fixed_value(agent):
+    if not agent.fixed_values:
+        print(
+            "There are no fixed values "
+            "available to revise."
+        )
+        return False
+
+    print("\nCurrent fixed values:")
+
+    for name, value in agent.fixed_values.items():
+        if isinstance(value, np.ndarray):
+            print(
+                f"  {name}: array with "
+                f"shape {value.shape}"
+            )
+        else:
+            print(f"  {name}: {value}")
+
+    while True:
+        name = input(
+            "Fixed value to revise "
+            "or 'cancel': "
+        ).strip()
+
+        if name.lower() == "cancel":
+            return False
+
+        if name not in agent.fixed_values:
+            print(
+                "Please enter one of the "
+                "listed fixed-value names."
+            )
+            continue
+
+        break
+
+    value, path = ask_fixed_value(name)
+
+    agent.set_fixed_values(
+        **{name: value}
+    )
+
+    if path is None:
+        agent.fixed_value_path.pop(
+            name,
+            None,
+        )
+    else:
+        agent.fixed_value_path[name] = path
+
+    agent.build_wrapper()
+
+    print(
+        f"\nUpdated fixed value {name}."
+    )
+
+    return True

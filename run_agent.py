@@ -11,6 +11,10 @@ from agent.prompts import (
     ask_use_config,
     collect_missing_inputs,
     review_analysis,
+    revise_fixed_value,
+    revise_prior_bounds,
+    review_analysis,
+    ask_validation_adjustment
 )
 
 from agent.config import (
@@ -196,9 +200,18 @@ def create_agent_interactively():
                 confirmed_analysis,
             )
 
-            collect_missing_inputs(agent)
+            configured_agent = collect_missing_inputs(
+                agent
+            )
 
-            return agent
+            if configured_agent is None:
+                print(
+                    "\nInteractive setup was cancelled. "
+                    "Please start the setup again.\n"
+                )
+                break
+
+            return configured_agent
 
 def main():
     use_config = ask_use_config()
@@ -232,16 +245,37 @@ def main():
 
     validation_report = agent.test_abc()
 
-    print("\nValidation report:")
-    for key, value in validation_report.items():
-        print(f"{key}: {value}")
+    while True:
+        validation_report = agent.test_abc()
 
-    if not validation_report["success"]:
-        print(
-            "\nValidation failed. "
-            "No run directory or config was created."
+        if validation_report["success"]:
+            print("\nValidation report:")
+
+            for key, value in (
+                validation_report.items()
+            ):
+                print(f"{key}: {value}")
+
+            break
+
+        adjustment = ask_validation_adjustment(
+            agent,
+            validation_report,
         )
-        return
+
+        if adjustment is None:
+            print(
+                "\nValidation cancelled. "
+                "No run directory or config "
+                "was created."
+            )
+            return
+
+        if adjustment == "prior_bounds":
+            revise_prior_bounds(agent)
+
+        elif adjustment == "fixed_values":
+            revise_fixed_value(agent)
 
     run_paths = create_run_directory(
         simulator_name=(

@@ -245,6 +245,18 @@ class SimulatorAgent:
         self.wrapper = wrapper
         return self.wrapper
 
+    def validation_failure(self, failure_type, message, check_number = None, parameters = None, possible_adjustments = None):
+        return {
+            "success": False,
+            "failure_type": failure_type,
+            "message": message,
+            "check_number": check_number,
+            "parameters": parameters,
+            "possible_adjustments": (
+                possible_adjustments or []
+            ),
+        }
+
     def test_abc(self, n_checks=10):
         if self.observed_data is None:
             raise ValueError("Observed data has not been loaded.")
@@ -257,105 +269,166 @@ class SimulatorAgent:
 
         rng = np.random.default_rng(self.random_seed)
 
-        observed_data = np.asarray(self.observed_data, dtype=float)
+        try:
+            observed_data = np.asarray(self.observed_data, dtype=float)
+        except (TypeError, ValueError) as error:
+            return self.validation_failure(
+                failure_type="observed_data",
+                message=(f"Observed data could not be converted to numeric data: {error}")
+                )
 
         if observed_data.size == 0:
-            raise ValueError("Observed data is empty.")
+            return self.validation_failure(
+                failure_type="observed_data",
+                message="Observed data is empty.",
+            )
 
         if not np.all(np.isfinite(observed_data)):
-            raise ValueError("Observed data contains non-finite values.")
+            return self.validation_failure(
+                failure_type="observed_data",
+                message=("Observed data contains non-finite values.")
+            )
 
         try:
             observed_summary = np.asarray(self.summary_fn(observed_data), dtype=float)
         except Exception as error:
-            raise RuntimeError(f"Observed summary calculation failed: {error}") from error
+            return self.validation_failure(
+                failure_type="summary_execution",
+                message=(f"Observed summary calculation failed: {error}")
+            )
 
         if observed_summary.size == 0:
-            raise ValueError("Summary function returned an empty observed summary.")
+            return self.validation_failure(
+                failure_type="summary_output",
+                message=("Summary function returned an empty observed summary.")
+            )
 
         if not np.all(np.isfinite(observed_summary)):
-            raise ValueError("Observed summary contains non-finite values.")
+            return self.validation_failure(
+                failure_type="summary_output",
+                message=("Observed summary contains non-finite values.")
+                )
 
         distances = []
+        simulated_shape = None
 
         for check_index in range(n_checks):
+            check_number = check_index + 1
+
             try:
                 test_theta = self.prior.sample(rng)
             except Exception as error:
-                raise RuntimeError(
-                    f"Prior sampling failed on check "
-                    f"{check_index + 1}: {error}"
-                ) from error
+                return self.validation_failure(
+                    failure_type="prior_sampling",
+                    message=(f"Prior sampling failed: {error}"),
+                    check_number=check_number,
+                    possible_adjustments=["prior_bounds"]
+                )
 
             try:
                 simulated_data = self.wrapper(test_theta, rng)
             except Exception as error:
-                raise RuntimeError(
-                    f"Simulator execution failed on check "
-                    f"{check_index + 1} for parameters "
-                    f"{test_theta}: {error}"
-                ) from error
+                return self.validation_failure(
+                    failure_type=("simulator_execution"),
+                    message=str(error),
+                    check_number=check_number,
+                    parameters=test_theta,
+                    possible_adjustments=["prior_bounds", "fixed_values"]
+                )
 
-            simulated_data = np.asarray(simulated_data, dtype=float)
+            try:
+                simulated_data = np.asarray(simulated_data, dtype=float)
+            except (TypeError, ValueError) as error:
+                return self.validation_failure(
+                    failure_type="simulator_output",
+                    message=(f"Simulator output could not be converted to numeric data: {error}"),
+                    check_number=check_number,
+                    parameters=test_theta,
+                    possible_adjustments=["prior_bounds", "fixed_values"]
+                )
 
-            if simulated_data.shape != observed_data.shape:
-                raise ValueError(
-                    "Simulator output is incompatible with "
-                    "observed data on check "
-                    f"{check_index + 1}: simulated shape "
-                    f"{simulated_data.shape}, observed shape "
-                    f"{observed_data.shape}."
+            simulated_shape = simulated_data.shape
+
+            if simulated_data.shape != (observed_data.shape):
+                return self.validation_failure(
+                    failure_type="output_shape",
+                    message=("Simulator output is incompatible with observed data: simulated shape "
+                        f"{simulated_data.shape}, observed shape {observed_data.shape}."),
+                    check_number=check_number,
+                    parameters=test_theta,
+                    possible_adjustments=["fixed_values"]
                 )
 
             if simulated_data.size == 0:
-                raise ValueError("Simulator returned an empty output.")
+                return self.validation_failure(
+                    failure_type="simulator_output",
+                    message=("Simulator returned an empty output."),
+                    check_number=check_number,
+                    parameters=test_theta,
+                    possible_adjustments=["prior_bounds", "fixed_values"],
+                )
 
             if not np.all(np.isfinite(simulated_data)):
-                raise ValueError(
-                    "Simulator returned non-finite values "
-                    f"on check {check_index + 1}."
+                return self.validation_failure(
+                    failure_type="simulator_output",
+                    message=("Simulator returned non-finite values."),
+                    check_number=check_number,
+                    parameters=test_theta,
+                    possible_adjustments=["prior_bounds", "fixed_values"]
                 )
 
             try:
-                simulated_summary = np.asarray(self.summary_fn(simulated_data), dtype=float)
+                simulated_summary = np.asarray(
+                    self.summary_fn(simulated_data), dtype=float)
             except Exception as error:
-                raise RuntimeError(
-                    f"Summary calculation failed on check "
-                    f"{check_index + 1}: {error}"
-                ) from error
+                return self.validation_failure(
+                    failure_type=("summary_execution"),
+                    message=(f"Simulated summary calculation failed: {error}"),
+                    check_number=check_number,
+                    parameters=test_theta,
+                )
 
-            if simulated_summary.shape != observed_summary.shape:
-                raise ValueError(
-                    "Simulated summary is incompatible with "
-                    "the observed summary on check "
-                    f"{check_index + 1}: simulated shape "
-                    f"{simulated_summary.shape}, observed shape "
-                    f"{observed_summary.shape}."
+            if simulated_summary.shape != (observed_summary.shape):
+                return self.validation_failure(
+                    failure_type="summary_shape",
+                    message=("Simulated summary shape does not match observed summary shape: simulated "
+                        f"{simulated_summary.shape}, observed {observed_summary.shape}."),
+                    check_number=check_number,
+                    parameters=test_theta,
                 )
 
             if simulated_summary.size == 0:
-                raise ValueError("Summary function returned an empty result.")
+                return self.validation_failure(
+                    failure_type="summary_output",
+                    message=("Summary function returned an empty simulated summary."),
+                    check_number=check_number,
+                    parameters=test_theta,
+                )
 
             if not np.all(np.isfinite(simulated_summary)):
-                raise ValueError(
-                    "Summary function returned non-finite "
-                    f"values on check {check_index + 1}."
+                return self.validation_failure(
+                    failure_type="summary_output",
+                    message=("Summary function returned non-finite values."),
+                    check_number=check_number,
+                    parameters=test_theta,
                 )
 
             try:
-                distance = float(
-                    self.distance_fn(observed_summary, simulated_summary)
-                )
+                distance = float(self.distance_fn(observed_summary, simulated_summary))
             except Exception as error:
-                raise RuntimeError(
-                    f"Distance calculation failed on check "
-                    f"{check_index + 1}: {error}"
-                ) from error
+                return self.validation_failure(
+                    failure_type=("distance_execution"),
+                    message=(f"Distance calculation failed: {error}"),
+                    check_number=check_number,
+                    parameters=test_theta,
+                )
 
             if not np.isfinite(distance):
-                raise ValueError(
-                    "Distance function returned a non-finite "
-                    f"value on check {check_index + 1}."
+                return self.validation_failure(
+                    failure_type="distance_output",
+                    message=("Distance function returned a non-finite value."),
+                    check_number=check_number,
+                    parameters=test_theta,
                 )
 
             distances.append(distance)
@@ -363,18 +436,12 @@ class SimulatorAgent:
         return {
             "success": True,
             "checks_completed": n_checks,
-            "parameter_names": list(
-                self.inferred_parameters
-            ),
-            "simulated_shape": observed_data.shape,
+            "parameter_names": list(self.inferred_parameters),
+            "simulated_shape": simulated_shape,
             "observed_shape": observed_data.shape,
-            "summary_shape": observed_summary.shape,
-            "minimum_distance": float(
-                np.min(distances)
-            ),
-            "maximum_distance": float(
-                np.max(distances)
-            ),
+            "summary_shape": (observed_summary.shape),
+            "minimum_distance": float(np.min(distances)),
+            "maximum_distance": float(np.max(distances)),
         }
 
     def run_abc(self):
