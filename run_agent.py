@@ -206,7 +206,7 @@ def main():
     if use_config:
         agent, source_config_path = (
             create_agent_from_config_interactively()
-            )
+        )
 
         print(
             "\nConfiguration loaded."
@@ -227,6 +227,21 @@ def main():
             "Agent configuration is incomplete: "
             f"{remaining}"
         )
+
+    agent.build_wrapper()
+
+    validation_report = agent.test_abc()
+
+    print("\nValidation report:")
+    for key, value in validation_report.items():
+        print(f"{key}: {value}")
+
+    if not validation_report["success"]:
+        print(
+            "\nValidation failed. "
+            "No run directory or config was created."
+        )
+        return
 
     run_paths = create_run_directory(
         simulator_name=(
@@ -269,14 +284,6 @@ def main():
         "Config saved to:",
         run_paths["config_path"],
     )
-
-    agent.build_wrapper()
-
-    validation_report = agent.test_abc()
-
-    print("\nValidation report:")
-    for key, val in validation_report.items():
-        print(f"{key}: {val}")
 
     accepted_parameters, accepted_distances = (
         agent.run_abc()
