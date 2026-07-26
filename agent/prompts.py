@@ -3,47 +3,28 @@ from pathlib import Path
 
 
 def ask_inferred_parameters():
-    text = input(
-        "Enter inferred parameter names, "
-        "separated by commas: "
-    ).strip()
-
+    text = input("Enter inferred parameter names, separated by commas: ").strip()
     names = [name.strip() for name in text.split(",")if name.strip()]
 
     if not names:
-        raise ValueError(
-            "At least one inferred parameter "
-            "is required."
-        )
+        raise ValueError("At least one inferred parameter is required.")
 
     return names
 
 def ask_prior_bounds(parameter_name):
     while True:
-        lower = _ask_float(
-            f"Lower prior bound for "
-            f"{parameter_name}: "
-        )
-
-        upper = _ask_float(
-            f"Upper prior bound for "
-            f"{parameter_name}: "
-        )
+        lower = _ask_float(f"Lower prior bound for {parameter_name}: ")
+        upper = _ask_float(f"Upper prior bound for {parameter_name}: ")
 
         if upper <= lower:
-            print(
-                "Upper bound must be greater "
-                "than lower bound."
-            )
+            print("Upper bound must be greater than lower bound.")
             continue
 
         return lower, upper
 
 def ask_random_seed(default=123):
     while True:
-        text = input(
-            f"Random seed [{default}]: "
-        ).strip()
+        text = input(f"Random seed [{default}]: ").strip()
 
         if not text:
             return default
@@ -51,102 +32,65 @@ def ask_random_seed(default=123):
         try:
             random_seed = int(text)
         except ValueError:
-            print(
-                "Random seed must be an integer."
-            )
+            print("Random seed must be an integer.")
             continue
 
         if random_seed < 0:
-            print(
-                "Random seed must be zero "
-                "or greater."
-            )
+            print("Random seed must be zero or greater.")
             continue
 
         return random_seed
 
 def ask_observed_data_path():
     while True:
-        path = input(
-            "Path to observed data file: "
-        ).strip()
+        path = input("Path to observed data file: ").strip()
 
         if not path:
-            print(
-                "An observed-data path "
-                "is required."
-            )
+            print("An observed-data path is required.")
             continue
 
         if not path.lower().endswith(".npy"):
-            print(
-                "Observed data must be "
-                "a .npy file."
-            )
+            print("Observed data must be a .npy file.")
             continue
 
         try:
-            data = np.load(
-                path,
-                allow_pickle=False,
-            )
+            data = np.load(path, allow_pickle=False)
         except (OSError, ValueError) as error:
-            print(
-                "Could not load observed data: "
-                f"{error}"
-            )
+            print(f"Could not load observed data: {error}")
             continue
 
         if data.size == 0:
-            print(
-                "Observed-data array is empty."
-            )
+            print("Observed-data array is empty.")
             continue
 
         if not np.all(np.isfinite(data)):
-            print(
-                "Observed data contains NaN "
-                "or infinite values."
-            )
+            print("Observed data contains NaN or infinite values.")
             continue
 
         return path
 
 def ask_epsilon():
     while True:
-        value = _ask_float(
-            "ABC epsilon: "
-        )
+        value = _ask_float("ABC epsilon: ")
 
         if value <= 0:
-            print(
-                "ABC epsilon must be greater "
-                "than zero."
-            )
+            print("ABC epsilon must be greater than zero.")
             continue
 
         return value
 
 def ask_n_simulations():
     while True:
-        text = input(
-            "Number of simulations: "
-        ).strip()
+        text = input("Number of simulations: ").strip()
 
         try:
             value = int(text)
         except ValueError:
-            print(
-                "Number of simulations must "
-                "be an integer."
-            )
+            print("Number of simulations must be an integer.")
             continue
 
         if value <= 0:
-            print(
-                "Number of simulations must "
-                "be greater than zero."
-            )
+            print("Number of simulations must be greater than zero.")
             continue
 
         return value
@@ -158,9 +102,7 @@ def ask_fixed_value(name):
         print("  2. Load a .npy file")
         print("  3. Generate a numeric sequence")
 
-        selection = input(
-            "Selection [1/2/3]: "
-        ).strip()
+        selection = input("Selection [1/2/3]: ").strip()
 
         if selection == "1":
             return _ask_numeric_fixed_value(name)
@@ -175,10 +117,7 @@ def ask_fixed_value(name):
 
 def _ask_numeric_fixed_value(name):
     while True:
-        text = input(
-            f"Numeric value for {name}: "
-        ).strip()
-
+        text = input(f"Numeric value for {name}: ").strip()
         try:
             value = float(text)
         except ValueError:
@@ -189,9 +128,7 @@ def _ask_numeric_fixed_value(name):
 
 def _ask_array_file(name):
     while True:
-        path = input(
-            f"Path to .npy file for {name}: "
-        ).strip()
+        path = input(f"Path to .npy file for {name}: ").strip()
 
         if not path:
             print("A file path is required.")
@@ -202,56 +139,29 @@ def _ask_array_file(name):
             continue
 
         try:
-            value = np.load(
-                path,
-                allow_pickle=False,
-            )
+            value = np.load(path, allow_pickle=False)
         except (OSError, ValueError) as error:
-            print(
-                f"Could not load the array: {error}"
-            )
+            print(f"Could not load the array: {error}")
             continue
 
         return value, path
 
 def _ask_generated_array(name):
     while True:
-        print(
-            f"\nGenerate an evenly spaced "
-            f"array for {name}."
-        )
+        print(f"\nGenerate an evenly spaced array for {name}.")
 
-        start = _ask_float(
-            "Start value: "
-        )
+        start = _ask_float("Start value: ")
+        stop = _ask_float("Stop value: ")
 
-        stop = _ask_float(
-            "Stop value: "
-        )
-
-        number_of_points = (
-            _ask_positive_integer(
-                "Number of points: "
-            )
-        )
+        number_of_points = _ask_positive_integer("Number of points: ")
 
         if stop <= start:
-            print(
-                "Stop value must be greater "
-                "than start value."
-            )
+            print("Stop value must be greater than start value.")
             continue
 
-        values = np.linspace(
-            start,
-            stop,
-            number_of_points,
-        )
+        values = np.linspace(start, stop, number_of_points,)
 
-        print(
-            f"Generated {name} with shape "
-            f"{values.shape}."
-        )
+        print(f"Generated {name} with shape {values.shape}.")
         print()
 
         return values, None
@@ -276,35 +186,20 @@ def _ask_positive_integer(message):
             continue
 
         if value < 2:
-            print(
-                "Number of points must be "
-                "at least 2."
-            )
+            print("Number of points must be at least 2.")
             continue
 
         return value
 
 def display_analysis(analysis):
-    print(
-        "\nProposed simulator classification:"
-    )
+    print("\nProposed simulator classification:")
+    print(f"RNG argument: {analysis['rng_argument']}")
+    print("Parameter container:", analysis["parameter_container"])
     
-    print(
-        f"RNG argument: "
-        f"{analysis['rng_argument']}"
-    )
-
-    print(
-        "Parameter container:",
-        analysis["parameter_container"],
-    )
-
     print("\nParameters inside container:")
 
     if analysis["container_parameters"]:
-        for name in (
-            analysis["container_parameters"]
-        ):
+        for name in (analysis["container_parameters"]):
             print(f"  {name}")
     else:
         print("  None")
@@ -312,41 +207,23 @@ def display_analysis(analysis):
     print("\nFixed values from defaults:")
 
     if analysis["fixed_values"]:
-        for name, value in (
-            analysis["fixed_values"].items()
-        ):
+        for name, value in (analysis["fixed_values"].items()):
             print(f"  {name} = {value}")
     else:
         print("  None")
 
-    print(
-        "\nFixed inputs requiring values:"
-    )
+    print("\nFixed inputs requiring values:")
 
-    if (
-        analysis[
-            "fixed_inputs_without_values"
-        ]
-    ):
-        for name in analysis[
-            "fixed_inputs_without_values"
-        ]:
+    if (analysis["fixed_inputs_without_values"]):
+        for name in analysis["fixed_inputs_without_values"]:
             print(f"  {name}")
     else:
         print("  None")
 
-    print(
-        "\nDirect inferred parameters:"
-    )
+    print("\nDirect inferred parameters:")
 
-    if (
-        analysis[
-            "direct_inferred_parameters"
-        ]
-    ):
-        for name in analysis[
-            "direct_inferred_parameters"
-        ]:
+    if (analysis["direct_inferred_parameters"]):
+        for name in analysis["direct_inferred_parameters"]:
             print(f"  {name}")
     else:
         print("  None")
@@ -360,11 +237,7 @@ def display_analysis(analysis):
 def review_analysis(analysis):
     while True:
         display_analysis(analysis)
-
-        response = input(
-            "\nIs this classification "
-            "correct? [y/n]: "
-        ).strip().lower()
+        response = input("\nIs this classification correct? [y/n]: ").strip().lower()
 
         if response in {"y", "yes"}:
             return analysis
@@ -376,102 +249,49 @@ def review_analysis(analysis):
         correct_analysis(analysis)
 
 def correct_analysis(analysis):
-    if (
-        analysis["parameter_container"]
-        is not None
-    ):
+    if (analysis["parameter_container"] is not None):
+        print("\nThis simulator uses a parameter container.")
         print(
-            "\nThis simulator uses a parameter "
-            "container."
+            "Under the current project scope, parameters inside the container are "
+            "inferred and all other top-level arguments are fixed."
         )
-        print(
-            "Under the current project scope, "
-            "parameters inside the container are "
-            "inferred and all other top-level "
-            "arguments are fixed."
-        )
-        print(
-            "Those roles cannot be moved without "
-            "changing the simulator wrapper."
-        )
-        print(
-            "Review the warnings or simulator "
-            "definition if the proposal is wrong."
-        )
+        print("Those roles cannot be moved without changing the simulator wrapper.")
+        print("Review the warnings or simulator definition if the proposal is wrong.")
         return
 
-    movable_names = sorted(
-        set(analysis["fixed_values"])
-        | set(
-            analysis[
-                "fixed_inputs_without_values"
-            ]
-        )
-        | set(
-            analysis[
-                "direct_inferred_parameters"
-            ]
-        )
+    movable_names = sorted(set(analysis["fixed_values"]) | 
+                           set(analysis["fixed_inputs_without_values"]) |
+                           set(analysis["direct_inferred_parameters"])
     )
 
     if not movable_names:
-        print(
-            "There are no arguments available "
-            "to move."
-        )
+        print("There are no arguments available to move.")
         return
 
-    print(
-        "\nArguments that can be moved:"
-    )
+    print("\nArguments that can be moved:")
 
     for name in movable_names:
-        category = get_analysis_category(
-            analysis,
-            name,
-        )
+        category = get_analysis_category(analysis, name)
         print(f"  {name}: {category}")
 
-    name = input(
-        "\nWhich argument is classified "
-        "incorrectly? "
-    ).strip()
+    name = input("\nWhich argument is classified incorrectly? ").strip()
 
     if name not in movable_names:
-        print(
-            f"{name!r} is not a movable "
-            "top-level argument."
-        )
+        print(f"{name!r} is not a movable top-level argument.")
         return
 
-    print(
-        "Current category:",
-        get_analysis_category(
-            analysis,
-            name,
-        ),
-    )
+    print("Current category:", get_analysis_category(analysis, name))
 
     print("\nMove it to:")
-    print(
-        "  1. Fixed input requiring a value"
-    )
+    print("  1. Fixed input requiring a value")
     print("  2. Inferred parameter")
 
-    choice = input(
-        "Choose 1 or 2: "
-    ).strip()
+    choice = input("Choose 1 or 2: ").strip()
 
     if choice == "1":
-        move_to_fixed_input(
-            analysis,
-            name,
-        )
+        move_to_fixed_input(analysis, name)
     elif choice == "2":
-        move_to_inferred(
-            analysis,
-            name,
-        )
+        move_to_inferred(analysis, name)
     else:
         print("Invalid choice.")
 
@@ -479,86 +299,43 @@ def get_analysis_category(analysis, name):
     if name in analysis["fixed_values"]:
         return "fixed value from default"
 
-    if name in analysis[
-        "fixed_inputs_without_values"
-    ]:
+    if name in analysis["fixed_inputs_without_values"]:
         return "fixed input requiring a value"
 
-    if name in analysis[
-        "direct_inferred_parameters"
-    ]:
+    if name in analysis["direct_inferred_parameters"]:
         return "direct inferred parameter"
 
-    if name in analysis[
-        "container_parameters"
-    ]:
+    if name in analysis["container_parameters"]:
         return "parameter inside container"
 
     return None
 
 def move_to_fixed_input(analysis, name):
-    _remove_from_direct_role_lists(
-        analysis,
-        name,
-    )
+    _remove_from_direct_role_lists(analysis, name)
 
-    analysis[
-        "fixed_inputs_without_values"
-    ].append(name)
+    analysis["fixed_inputs_without_values"].append(name)
+    analysis["fixed_inputs_without_values"].sort()
 
-    analysis[
-        "fixed_inputs_without_values"
-    ].sort()
+    _refresh_inferred_parameters(analysis)
 
-    _refresh_inferred_parameters(
-        analysis
-    )
+    analysis["evidence"][name] = ("Classified as a fixed input after user correction.")
 
-    analysis["evidence"][name] = (
-        "Classified as a fixed input "
-        "after user correction."
-    )
-
-    print(
-        f"{name!r} moved to fixed inputs."
-    )
+    print(f"{name!r} moved to fixed inputs.")
 
 def move_to_inferred(analysis, name):
-    _remove_from_direct_role_lists(
-        analysis,
-        name,
-    )
+    _remove_from_direct_role_lists(analysis, name)
 
-    analysis[
-        "direct_inferred_parameters"
-    ].append(name)
+    analysis["direct_inferred_parameters"].append(name)
+    analysis["direct_inferred_parameters"].sort()
 
-    analysis[
-        "direct_inferred_parameters"
-    ].sort()
+    _refresh_inferred_parameters(analysis)
 
-    _refresh_inferred_parameters(
-        analysis
-    )
+    analysis["evidence"][name] = ("Classified as directly inferred after user correction.")
 
-    analysis["evidence"][name] = (
-        "Classified as directly inferred "
-        "after user correction."
-    )
+    print(f"{name!r} moved to inferred parameters.")
 
-    print(
-        f"{name!r} moved to inferred "
-        "parameters."
-    )
-
-def _remove_from_direct_role_lists(
-    analysis,
-    name,
-):
-    analysis["fixed_values"].pop(
-        name,
-        None,
-    )
+def _remove_from_direct_role_lists(analysis, name):
+    analysis["fixed_values"].pop(name, None)
 
     categories = [
         "fixed_inputs_without_values",
@@ -571,28 +348,15 @@ def _remove_from_direct_role_lists(
             analysis[category].remove(name)
 
 def _refresh_inferred_parameters(analysis):
-    combined = (
-        list(analysis["container_parameters"])
-        + list(
-            analysis[
-                "direct_inferred_parameters"
-            ]
-        )
-    )
-
-    analysis["inferred_parameters"] = (
-        list(dict.fromkeys(combined))
-    )
+    combined = (list(analysis["container_parameters"]) + list(analysis["direct_inferred_parameters"]))
+    analysis["inferred_parameters"] = (list(dict.fromkeys(combined)))
 
 def collect_missing_inputs(agent):
     missing = agent.get_missing_fields()
 
     if "inferred_parameters" in missing:
         names = ask_inferred_parameters()
-
-        agent.set_inferred_parameters(
-            *names
-        )
+        agent.set_inferred_parameters(*names)
 
     missing = agent.get_missing_fields()
 
@@ -604,25 +368,16 @@ def collect_missing_inputs(agent):
             if name in agent.fixed_values:
                 continue
 
-            value, source_path = ask_fixed_value(
-                name
-            )
-
+            value, source_path = ask_fixed_value(name)
             fixed_values[name] = value
 
             if source_path is not None:
-                fixed_value_path[name] = (
-                    source_path
-                )
+                fixed_value_path[name] = (source_path)
 
         if fixed_values:
-            agent.set_fixed_values(
-                **fixed_values
-            )
+            agent.set_fixed_values(**fixed_values)
 
-        agent.fixed_value_path.update(
-            fixed_value_path
-        )
+        agent.fixed_value_path.update(fixed_value_path)
 
     missing = agent.get_missing_fields()
 
@@ -630,71 +385,47 @@ def collect_missing_inputs(agent):
         bounds = {}
 
         for name in missing["prior_bounds"]:
-            bounds[name] = ask_prior_bounds(
-                name
-            )
+            bounds[name] = ask_prior_bounds(name)
             print()
 
-        agent.set_prior_bounds(
-            **bounds
-        )
+        agent.set_prior_bounds(**bounds)
 
     missing = agent.get_missing_fields()
 
     if "epsilon" in missing:
-        agent.set_epsilon(
-            ask_epsilon()
-        )
+        agent.set_epsilon(ask_epsilon())
 
     missing = agent.get_missing_fields()
 
     if "n_simulations" in missing:
-        agent.set_n_sims(
-            ask_n_simulations()
-        )
+        agent.set_n_sims(ask_n_simulations())
 
-    agent.set_random_seed(
-        ask_random_seed(
-            default=agent.random_seed
-        )
-    )
+    agent.set_random_seed(ask_random_seed(default=agent.random_seed))
 
     print()
 
-    generate_synthetic = (
-        ask_generate_synthetic_data()
-    )
+    generate_synthetic = (ask_generate_synthetic_data())
 
     if generate_synthetic:
         print()
         true_values = {}
 
         for name in agent.inferred_parameters:
-            lower, upper = (
-                agent.prior_bounds[name]
-            )
+            lower, upper = (agent.prior_bounds[name])
 
             while True:
-                value = ask_true_parameter_value(
-                    name
-                )
+                value = ask_true_parameter_value(name)
 
                 if lower <= value <= upper:
                     true_values[name] = value
                     break
 
-                print(
-                    f"True value for {name!r} "
-                    f"must be between {lower} "
-                    f"and {upper}."
-                )
+                print(f"True value for {name!r} must be between {lower} and {upper}.")
 
         while True:
 
             try:
-                agent.generate_synthetic_observed_data(
-                    true_values
-                )
+                agent.generate_synthetic_observed_data(true_values)
                 break
 
             except Exception as error:
@@ -712,135 +443,82 @@ def collect_missing_inputs(agent):
                     ],
                 }
 
-                adjustment = ask_validation_adjustment(
-                    agent,
-                    synthetic_report,
-                )
+                adjustment = ask_validation_adjustment(agent, synthetic_report)
 
                 if adjustment is None:
-                    print(
-                        "\nSynthetic-data setup "
-                        "cancelled."
-                    )
+                    print("\nSynthetic-data setup cancelled.")
                     return None
 
                 if adjustment == "fixed_values":
                     revised = revise_fixed_value(agent)
 
                 elif adjustment == "true_values":
-                    revised = (
-                        revise_true_parameter_value(
-                            agent,
-                            true_values,
-                        )
-                    )
+                    revised = (revise_true_parameter_value(agent, true_values))
 
                 else:
                     revised = False
 
                 if not revised:
-                    print(
-                        "\nSynthetic-data setup "
-                        "cancelled."
-                    )
+                    print("\nSynthetic-data setup cancelled.")
                     return None
 
         print()
-
-        print(
-            "Synthetic observed data generated "
-            f"with shape "
-            f"{agent.observed_data.shape}."
-        )
+        print(f"Synthetic observed data generated with shape {agent.observed_data.shape}.")
 
     else:
         missing = agent.get_missing_fields()
 
         if "observed_data_path" in missing:
             path = ask_observed_data_path()
-
-            agent.load_observed_data(
-                path
-            )
+            agent.load_observed_data(path)
 
     return agent
 
 def ask_simulator_path():
     while True:
-        path = input(
-            "Path to simulator Python file: "
-        ).strip()
+        path = input("Path to simulator Python file: ").strip()
 
         if not path:
-            print(
-                "A simulator file path "
-                "is required."
-            )
+            print("A simulator file path is required.")
             continue
 
-        simulator_path = Path(
-            path
-        ).expanduser()
+        simulator_path = Path(path).expanduser()
 
         if simulator_path.suffix.lower() != ".py":
-            print(
-                "Simulator file must end "
-                "in .py."
-            )
+            print("Simulator file must end in .py.")
             continue
 
         if not simulator_path.is_file():
-            print(
-                "Simulator file was not found: "
-                f"{simulator_path}"
-            )
+            print(f"Simulator file was not found: {simulator_path}")
             continue
 
         return str(simulator_path)
 
-def ask_simulator_function_name(
-    allow_back=False,
-):
+def ask_simulator_function_name(allow_back=False):
     while True:
         if allow_back:
-            message = (
-                "Simulator function name or "
-                "'back' to choose another file: "
-            )
+            message = ("Simulator function name or 'back' to choose another file: ")
         else:
-            message = (
-                "Simulator function name: "
-            )
+            message = ("Simulator function name: ")
 
         name = input(message).strip()
 
-        if (
-            allow_back
-            and name.lower() == "back"
-        ):
+        if allow_back and name.lower() == "back":
             return None
 
         if not name:
-            print(
-                "A simulator function name "
-                "is required."
-            )
+            print("A simulator function name is required.")
             continue
 
         if not name.isidentifier():
-            print(
-                "Function name must be a valid "
-                "Python identifier."
-            )
+            print("Function name must be a valid Python identifier.")
             continue
 
         return name
 
 def ask_use_config():
     while True:
-        response = input(
-            "Use an existing config file? [y/n]: "
-        ).strip().lower()
+        response = input("Use an existing config file? [y/n]: ").strip().lower()
 
         if response in {"y", "yes"}:
             return True
@@ -852,43 +530,27 @@ def ask_use_config():
 
 def ask_config_path():
     while True:
-        path = input(
-            "Path to config file: "
-        ).strip()
+        path = input("Path to config file: ").strip()
 
         if not path:
-            print(
-                "A config file path "
-                "is required."
-            )
+            print("A config file path is required.")
             continue
 
-        config_path = Path(
-            path
-        ).expanduser()
+        config_path = Path(path).expanduser()
 
         if config_path.suffix.lower() != ".json":
-            print(
-                "Config file must end "
-                "in .json."
-            )
+            print("Config file must end in .json.")
             continue
 
         if not config_path.is_file():
-            print(
-                "Config file was not found: "
-                f"{config_path}"
-            )
+            print(f"Config file was not found: {config_path}")
             continue
 
         return str(config_path)
 
 def ask_generate_synthetic_data():
     while True:
-        response = input(
-            "Generate synthetic observed data? "
-            "[y/n]: "
-        ).strip().lower()
+        response = input("Generate synthetic observed data? [y/n]: ").strip().lower()
 
         if response in {"y", "yes"}:
             return True
@@ -898,43 +560,21 @@ def ask_generate_synthetic_data():
 
         print("Please enter y or n.")
 
-def ask_true_parameter_value(
-    parameter_name,
-):
-    return _ask_float(
-        f"True value for "
-        f"{parameter_name}: "
-    )
+def ask_true_parameter_value(parameter_name):
+    return _ask_float(f"True value for {parameter_name}: ")
 
-def ask_validation_adjustment(
-    agent,
-    validation_report,
-):
+def ask_validation_adjustment(agent, validation_report):
     print("\nValidation failed.")
+    print("Failure type:", validation_report["failure_type"])
 
-    print(
-        "Failure type:",
-        validation_report["failure_type"],
-    )
-
-    check_number = validation_report.get(
-        "check_number"
-    )
+    check_number = validation_report.get("check_number")
 
     if check_number is not None:
-        print(
-            "Validation check:",
-            check_number,
-        )
+        print("Validation check:", check_number)
 
-    print(
-        "Message:",
-        validation_report["message"],
-    )
+    print("Message:", validation_report["message"],)
 
-    parameters = validation_report.get(
-        "parameters"
-    )
+    parameters = validation_report.get("parameters")
 
     if parameters:
         print("\nFailing parameter draw:")
@@ -942,25 +582,13 @@ def ask_validation_adjustment(
         for name, value in parameters.items():
             print(f"  {name}: {value}")
 
-    adjustments = list(
-        validation_report.get(
-            "possible_adjustments",
-            [],
-        )
-    )
+    adjustments = list(validation_report.get("possible_adjustments", []))
 
-    if (
-        "fixed_values" in adjustments
-        and not agent.fixed_values
-    ):
+    if "fixed_values" in adjustments and not agent.fixed_values:
         adjustments.remove("fixed_values")
 
     if not adjustments:
-        print(
-            "\nThis failure cannot be "
-            "adjusted through the current "
-            "configuration prompts."
-        )
+        print("\nThis failure cannot be adjusted through the current configuration prompts.")
         return None
 
     labels = {
@@ -971,43 +599,26 @@ def ask_validation_adjustment(
 
     print("\nPossible changes:")
 
-    for index, adjustment in enumerate(
-        adjustments,
-        start=1,
-    ):
-        print(
-            f"  {index}. "
-            f"{labels[adjustment]}"
+    for index, adjustment in enumerate(adjustments, start=1):
+        print(f"  {index}. {labels[adjustment]}"
         )
 
     print("  0. Cancel")
 
     while True:
-        selection = input(
-            "Selection: "
-        ).strip()
+        selection = input("Selection: ").strip()
 
         if selection == "0":
             return None
 
         try:
-            selected_index = (
-                int(selection) - 1
-            )
+            selected_index = (int(selection) - 1)
         except ValueError:
-            print(
-                "Please enter a valid option."
-            )
+            print("Please enter a valid option.")
             continue
 
-        if not (
-            0
-            <= selected_index
-            < len(adjustments)
-        ):
-            print(
-                "Please enter a valid option."
-            )
+        if not 0 <= selected_index < len(adjustments):
+            print("Please enter a valid option.")
             continue
 
         return adjustments[selected_index]
@@ -1015,96 +626,55 @@ def ask_validation_adjustment(
 def revise_prior_bounds(agent):
     print("\nCurrent prior bounds:")
 
-    for name, bounds in (
-        agent.prior_bounds.items()
-    ):
-        print(
-            f"  {name}: "
-            f"[{bounds[0]}, {bounds[1]}]"
-        )
+    for name, bounds in (agent.prior_bounds.items()):
+        print(f"  {name}: [{bounds[0]}, {bounds[1]}]")
 
     while True:
-        parameter_name = input(
-            "Parameter to revise: "
-        ).strip()
+        parameter_name = input("Parameter to revise: ").strip()
 
-        if (
-            parameter_name
-            not in agent.prior_bounds
-        ):
-            print(
-                "Please enter one of the "
-                "listed parameter names."
-            )
+        if (parameter_name not in agent.prior_bounds):
+            print("Please enter one of the listed parameter names.")
             continue
 
         break
 
-    new_bounds = dict(
-        agent.prior_bounds
-    )
+    new_bounds = dict(agent.prior_bounds)
+    new_bounds[parameter_name] = (ask_prior_bounds(parameter_name))
 
-    new_bounds[parameter_name] = (
-        ask_prior_bounds(parameter_name)
-    )
+    agent.set_prior_bounds(**new_bounds)
 
-    agent.set_prior_bounds(
-        **new_bounds
-    )
-
-    print(
-        f"Updated prior bounds for "
-        f"{parameter_name}."
-    )
+    print(f"Updated prior bounds for {parameter_name}.")
 
 def revise_fixed_value(agent):
     if not agent.fixed_values:
-        print(
-            "There are no fixed values "
-            "available to revise."
-        )
+        print("There are no fixed values available to revise.")
         return False
 
     print("\nCurrent fixed values:")
 
     for name, value in agent.fixed_values.items():
         if isinstance(value, np.ndarray):
-            print(
-                f"  {name}: array with "
-                f"shape {value.shape}"
-            )
+            print(f"  {name}: array with shape {value.shape}")
         else:
             print(f"  {name}: {value}")
 
     while True:
-        name = input(
-            "Fixed value to revise "
-            "or 'cancel': "
-        ).strip()
+        name = input("Fixed value to revise or 'cancel': ").strip()
 
         if name.lower() == "cancel":
             return False
 
         if name not in agent.fixed_values:
-            print(
-                "Please enter one of the "
-                "listed fixed-value names."
-            )
+            print("Please enter one of the listed fixed-value names.")
             continue
 
         break
 
     value, path = ask_fixed_value(name)
-
-    agent.set_fixed_values(
-        **{name: value}
-    )
+    agent.set_fixed_values(**{name: value})
 
     if path is None:
-        agent.fixed_value_path.pop(
-            name,
-            None,
-        )
+        agent.fixed_value_path.pop(name, None)
     else:
         agent.fixed_value_path[name] = path
 
@@ -1114,29 +684,20 @@ def revise_fixed_value(agent):
 
     return True
 
-def revise_true_parameter_value(
-    agent,
-    true_values,
-):
+def revise_true_parameter_value(agent, true_values):
     print("\nCurrent true parameter values:")
 
     for name, value in true_values.items():
         print(f"  {name}: {value}")
 
     while True:
-        name = input(
-            "True parameter to revise "
-            "or 'cancel': "
-        ).strip()
+        name = input("True parameter to revise or 'cancel': ").strip()
 
         if name.lower() == "cancel":
             return False
 
         if name not in true_values:
-            print(
-                "Please enter one of the "
-                "listed parameter names."
-            )
+            print("Please enter one of the listed parameter names.")
             continue
 
         break
@@ -1150,14 +711,8 @@ def revise_true_parameter_value(
             true_values[name] = value
             break
 
-        print(
-            f"True value for {name!r} "
-            f"must be between {lower} "
-            f"and {upper}."
-        )
+        print(f"True value for {name!r} must be between {lower} and {upper}.")
 
-    print(
-        f"\nUpdated true value for {name}."
-    )
+    print(f"\nUpdated true value for {name}.")
 
     return True
