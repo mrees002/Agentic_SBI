@@ -1,8 +1,8 @@
 import numpy as np
 
 
-def simulate_normal(mean, sd, n=100):
-    return np.random.normal(
+def simulate_normal(mean, sd, rng, n=100):
+    return rng.normal(
         loc=mean,
         scale=sd,
         size=n,
@@ -75,4 +75,11 @@ def simulate_decay(
             noise_sd,
             size=time.shape,
         )
+    )
+
+def simulate_container(theta, rng, n=100):
+    return rng.normal(
+        theta["mu"],
+        theta["sigma"],
+        size=n,
     )
