@@ -7,6 +7,7 @@ from agent.function_analyzer import (
 from agent.prompts import (
     ask_config_path,
     ask_simulator_path,
+    ask_simulator_function_name,
     ask_use_config,
     collect_missing_inputs,
     review_analysis,
@@ -96,18 +97,10 @@ def create_agent_interactively():
 
         # get simulator name
         while True:
-            simulator_name = input("Simulator function name or 'back' to choose another file: ").strip()
-            if simulator_name.lower() == "back":
+            simulator_name = ask_simulator_function_name(allow_back = True)
+            if simulator_name is None:
                 break
-
-            if not simulator_name:
-                print("A simulator function name is required.")
-                continue
-
-            if not simulator_name.isidentifier():
-                print("Function name must be a valid Python identifier.")
-                continue
-
+            
             try:
                 simulator = load_simulator(simulator_path, simulator_name)
             except (AttributeError, TypeError, ValueError) as error:

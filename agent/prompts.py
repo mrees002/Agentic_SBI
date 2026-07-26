@@ -799,11 +799,27 @@ def ask_simulator_path():
 
         return str(simulator_path)
 
-def ask_simulator_function_name():
+def ask_simulator_function_name(
+    allow_back=False,
+):
     while True:
-        name = input(
-            "Simulator function name: "
-        ).strip()
+        if allow_back:
+            message = (
+                "Simulator function name or "
+                "'back' to choose another file: "
+            )
+        else:
+            message = (
+                "Simulator function name: "
+            )
+
+        name = input(message).strip()
+
+        if (
+            allow_back
+            and name.lower() == "back"
+        ):
+            return None
 
         if not name:
             print(
