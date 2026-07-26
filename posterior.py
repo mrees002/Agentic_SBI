@@ -57,45 +57,29 @@ def exact_linear_regression_posterior(x, y, noise_sd, prior_mean, prior_covarian
     try:
         np.linalg.cholesky(prior_covariance)
     except np.linalg.LinAlgError as error:
-        raise ValueError(
-            "prior_covariance must be positive definite and invertible."
-        ) from error
+        raise ValueError("prior_covariance must be positive definite and invertible.") from error
 
     # create design matrix
-    design_matrix = np.column_stack(
-        (np.ones(x.size), x)
-    )
+    design_matrix = np.column_stack((np.ones(x.size), x))
 
     # find prior precision and create variance
     prior_precision = np.linalg.inv(prior_covariance)
     noise_variance = noise_sd ** 2
 
     # find posterior precision
-    posterior_precision = (
-        prior_precision
-        + design_matrix.T @ design_matrix / noise_variance
-    )
+    posterior_precision = (prior_precision + design_matrix.T @ design_matrix / noise_variance)
 
     # ensure posterior precision matrix is invertible
     try:
-        posterior_covariance = np.linalg.inv(
-            posterior_precision
-        )
+        posterior_covariance = np.linalg.inv(posterior_precision)
     except np.linalg.LinAlgError as error:
-        raise ValueError(
-            "Posterior precision matrix is not invertible."
-        ) from error
+        raise ValueError("Posterior precision matrix is not invertible.") from error
 
     # find posterior covariance
-    posterior_covariance = np.linalg.inv(
-        posterior_precision
-    )
+    posterior_covariance = np.linalg.inv(posterior_precision)
 
     # calculate posterior mean
-    posterior_mean = posterior_covariance @ (
-        prior_precision @ prior_mean
-        + design_matrix.T @ y / noise_variance
-    )
+    posterior_mean = posterior_covariance @ (prior_precision @ prior_mean + design_matrix.T @ y / noise_variance)
 
     return posterior_mean, posterior_covariance
 
@@ -126,7 +110,4 @@ def sample_exact_posterior(posterior_mean, posterior_covariance, n_samples, rng)
     samples = rng.multivariate_normal(posterior_mean, posterior_covariance, n_samples)
     
     # return a dictionary with the sampled intercept and slope values
-    return {
-        "intercept": samples[:, 0],
-        "slope": samples[:, 1]
-    }
+    return {"intercept": samples[:, 0], "slope": samples[:, 1]}

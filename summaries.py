@@ -25,10 +25,7 @@ def mean_std_summary(y):
         raise ValueError("Input data contains non-finite values.")
 
     # return mean and std
-    return np.array([
-        np.mean(y),
-        np.std(y, ddof=1),
-    ])
+    return np.array([np.mean(y), np.std(y, ddof=1)])
 
 def regression_summary(x, y):
 

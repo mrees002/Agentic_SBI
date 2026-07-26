@@ -4,7 +4,7 @@ from itertools import combinations
 
 
 def plot_posterior(accepted_parameters, true_values=None, output_path=None):
-    """Plot marginal posterior histograms for accepted ABC parameters."""
+
     names = list(accepted_parameters[0].keys())
 
     plt.figure(figsize=(7, 3 * len(names)))
@@ -33,7 +33,7 @@ def plot_posterior(accepted_parameters, true_values=None, output_path=None):
         plt.show()
 
 def plot_parameter_pairs(accepted_parameters, output_path=None):
-    """Plot pairwise relationships between accepted ABC parameters."""
+
     names = list(accepted_parameters[0].keys())
     pairs = list(combinations(names, 2))
 
@@ -64,7 +64,7 @@ def plot_parameter_pairs(accepted_parameters, output_path=None):
 
 
 def plot_observed_data(x, observed_data, true_intercept, true_slope, output_path=None):
-    """Plot observed regression data and the true regression line."""
+
     true_line = true_intercept + true_slope * np.array(x)
 
     plt.figure(figsize=(8, 6))
@@ -84,7 +84,7 @@ def plot_observed_data(x, observed_data, true_intercept, true_slope, output_path
 
 
 def plot_comparison(abc_parameters, exact_parameters, true_intercept, true_slope, output_path=None):
-    """Compare ABC and exact posterior samples for intercept and slope."""
+
     abc_intercepts = [sample["intercept"] for sample in abc_parameters]
     abc_slopes = [sample["slope"] for sample in abc_parameters]
 

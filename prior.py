@@ -6,16 +6,12 @@ class UniformPrior:
         # i.e. {intercept: (-5, 5), ...}
         for name, interval in bounds.items():
             if len(interval) != 2:
-                raise ValueError(
-                    f"Bounds for '{name}' must contain two values."
-                )
+                raise ValueError(f"Bounds for '{name}' must contain two values.")
 
             lower, upper = interval
 
             if lower >= upper:
-                raise ValueError(
-                    f"Lower bound for '{name}' must be less than upper bound."
-                )
+                raise ValueError(f"Lower bound for '{name}' must be less than upper bound.")
 
         self.bounds = bounds
     
@@ -54,15 +50,11 @@ class GaussianPrior:
         self.stds = stds
 
         if self.means.keys() != self.stds.keys():
-            raise ValueError(
-                "Mean and standard deviation parameter names must match."
-            )
+            raise ValueError("Mean and standard deviation parameter names must match.")
 
         for name, value in self.stds.items():
             if value <= 0:
-                raise ValueError(
-                    f"Standard deviation for '{name}' must be positive."
-                )
+                raise ValueError(f"Standard deviation for '{name}' must be positive.")
 
 
     def sample(self, rng):

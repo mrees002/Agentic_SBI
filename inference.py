@@ -27,23 +27,14 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     if epsilon < 0:
         raise ValueError("epsilon must be nonnegative.")
 
-    if (
-        not isinstance(n_simulations, int)
-        or isinstance(n_simulations, bool)
-        or n_simulations <= 0
-    ):
+    if not isinstance(n_simulations, int or isinstance(n_simulations, bool) or n_simulations <= 0):
         raise ValueError("n_simulations must be a positive integer.")
 
     # get summary of observed data
-    observed_summary = np.asarray(
-        summary_fn(observed_data),
-        dtype=float,
-    )
+    observed_summary = np.asarray(summary_fn(observed_data), dtype=float)
 
     if not np.all(np.isfinite(observed_summary)):
-        raise ValueError(
-            "Observed summary contains non-finite values."
-        )
+        raise ValueError("Observed summary contains non-finite values.")
 
     # intialize list for accepted parameters and distances
     accepted_parameters = []
@@ -58,21 +49,14 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
         simulated_data = simulator(theta, rng)
 
         # get summary statistics of sample data 
-        simulated_summary = np.asarray(
-            summary_fn(simulated_data),
-            dtype=float,
-        )
+        simulated_summary = np.asarray(summary_fn(simulated_data), dtype=float)
 
         # calculate distance
-        distance = float(
-            distance_fn(observed_summary, simulated_summary)
-        )
+        distance = float(distance_fn(observed_summary, simulated_summary))
 
         # ensure distance function returned valid argument
         if not np.isfinite(distance):
-            raise ValueError(
-                "Distance function returned a non-finite value."
-            )
+            raise ValueError("Distance function returned a non-finite value.")
 
         # check if summary stats stay within epsilon and add to list
         if distance <= epsilon:
