@@ -42,7 +42,6 @@ def create_config(output_path, simulator_name, simulator_path, parameter_contain
 
     return config
 
-
 def load_config_file(config_path):
     config_path = Path(config_path)
 
@@ -54,7 +53,6 @@ def load_config_file(config_path):
 
     with config_path.open("r", encoding="utf-8") as file:
         return json.load(file)
-
 
 def normalize_config(config, config_directory):
     config_directory = Path(config_directory)
