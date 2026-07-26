@@ -111,7 +111,7 @@ class SimulatorAgent:
         for name, value in values.items():
             if name not in self.arguments:
                 raise ValueError(f"{name} not in function arguments.")
-            if (self.parameter_container is None and name in self.inferred_parameters):
+            if self.parameter_container is None and name in self.inferred_parameters:
                 raise ValueError(f"{name} is already an inferred parameter.")
 
             new_fixed_values[name] = value
@@ -199,8 +199,7 @@ class SimulatorAgent:
         self.inferred_parameters = settings["inferred_parameters"]
         self.prior_bounds = settings["prior_bounds"]
         self.fixed_values = settings["fixed_values"]
-        self.fixed_value_path = dict(
-            raw_config.get("fixed_value_path", {}))
+        self.fixed_value_path = dict(raw_config.get("fixed_value_path", {}))
 
         self.epsilon = settings["epsilon"]
         self.n_simulations = settings["n_simulations"]
@@ -552,10 +551,7 @@ class SimulatorAgent:
     def generate_synthetic_observed_data(self, true_parameter_values):
 
         if not isinstance(true_parameter_values, dict):
-            raise TypeError(
-                "true_parameter_values must be "
-                "a dictionary."
-            )
+            raise TypeError("true_parameter_values must be a dictionary.")
         
         if self.wrapper is None:
             self.build_wrapper()
@@ -563,10 +559,7 @@ class SimulatorAgent:
         missing_parameters = [name for name in self.inferred_parameters if name not in true_parameter_values]
 
         if missing_parameters:
-            raise ValueError(
-                "Missing true values for: "
-                f"{missing_parameters}"
-            )
+            raise ValueError(f"Missing true values for: {missing_parameters}")
 
         self.synthetic_generation_seed = (self.random_seed + 1)
         rng = np.random.default_rng(self.synthetic_generation_seed)
@@ -578,10 +571,7 @@ class SimulatorAgent:
             raise ValueError("Synthetic observed data is empty.")
 
         if not np.all(np.isfinite(observed_data)):
-            raise ValueError(
-                "Synthetic observed data contains "
-                "NaN or infinite values."
-            )
+            raise ValueError("Synthetic observed data contains NaN or infinite values.")
 
         self.observed_data = observed_data
         self.true_parameter_values = dict(true_parameter_values)
@@ -589,37 +579,19 @@ class SimulatorAgent:
         return self.observed_data
 
     def set_synthetic_metadata(self, true_parameter_values, generation_seed):
-        if not isinstance(
-            true_parameter_values,
-            dict,
-        ):
-            raise TypeError(
-                "true_parameter_values must be "
-                "a dictionary."
-            )
+        if not isinstance(true_parameter_values, dict):
+            raise TypeError("true_parameter_values must be a dictionary.")
 
-        expected = set(
-            self.inferred_parameters
-        )
-
-        provided = set(
-            true_parameter_values
-        )
+        expected = set(self.inferred_parameters)
+        provided = set(true_parameter_values)
 
         if provided != expected:
-            raise ValueError(
-                "True parameter names must match "
-                "the inferred parameters."
-            )
+            raise ValueError("True parameter names must match the inferred parameters.")
 
         if not isinstance(generation_seed, int):
-            raise TypeError(
-                "generation_seed must be "
-                "an integer."
-            )
+            raise TypeError("generation_seed must be an integer.")
 
         self.true_parameter_values = dict(true_parameter_values)
-
         self.synthetic_generation_seed = generation_seed
 
         return self.true_parameter_values
