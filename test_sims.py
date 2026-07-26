@@ -50,3 +50,29 @@ def simulate_quadratic(
             size=len(x),
         )
     )
+
+
+def simulate_decay(
+    rate,
+    time,
+    rng,
+    noise_sd=0.1,
+):
+    time = np.asarray(
+        time,
+        dtype=float,
+    )
+
+    if time.ndim != 1:
+        raise ValueError(
+            "time must be one-dimensional"
+        )
+
+    return (
+        np.exp(-rate * time)
+        + rng.normal(
+            0,
+            noise_sd,
+            size=time.shape,
+        )
+    )

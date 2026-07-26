@@ -690,7 +690,6 @@ def collect_missing_inputs(agent):
                 )
 
         while True:
-            agent.build_wrapper()
 
             try:
                 agent.generate_synthetic_observed_data(
@@ -1108,8 +1107,6 @@ def revise_fixed_value(agent):
         )
     else:
         agent.fixed_value_path[name] = path
-
-    agent.build_wrapper()
 
     print(
         f"\nUpdated fixed value {name}."
