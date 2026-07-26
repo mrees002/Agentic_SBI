@@ -83,3 +83,60 @@ def simulate_container(theta, rng, n=100):
         theta["sigma"],
         size=n,
     )
+
+def simulate_stochastic_logistic_growth(
+    growth_rate,
+    carrying_capacity,
+    rng,
+    initial_population=20.0,
+    n_steps=100,
+    time_step=0.1,
+    noise_scale=0.5,
+):
+    if growth_rate <= 0:
+        raise ValueError(
+            "growth_rate must be greater than zero."
+        )
+
+    if carrying_capacity <= 0:
+        raise ValueError(
+            "carrying_capacity must be greater than zero."
+        )
+
+    if initial_population <= 0:
+        raise ValueError(
+            "initial_population must be greater than zero."
+        )
+
+    population = np.empty(
+        n_steps,
+        dtype=float,
+    )
+
+    population[0] = initial_population
+
+    for index in range(1, n_steps):
+        current = population[index - 1]
+
+        deterministic_change = (
+            growth_rate
+            * current
+            * (1.0 - current / carrying_capacity)
+            * time_step
+        )
+
+        stochastic_change = (
+            noise_scale
+            * np.sqrt(max(current, 0.0))
+            * np.sqrt(time_step)
+            * rng.normal()
+        )
+
+        population[index] = max(
+            current
+            + deterministic_change
+            + stochastic_change,
+            0.0,
+        )
+
+    return population
