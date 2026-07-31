@@ -27,8 +27,11 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
     if epsilon < 0:
         raise ValueError("epsilon must be nonnegative.")
 
-    if not isinstance(n_simulations, int or isinstance(n_simulations, bool) or n_simulations <= 0):
-        raise ValueError("n_simulations must be a positive integer.")
+    if isinstance(n_simulations, bool) or not isinstance(n_simulations, int):
+        raise TypeError("n_simulations must be an integer.")
+
+    if n_simulations <= 0:
+        raise ValueError("n_simulations must be positive.")
 
     # get summary of observed data
     observed_summary = np.asarray(summary_fn(observed_data), dtype=float)
@@ -45,6 +48,7 @@ def abc_function(prior, simulator, observed_data, summary_fn, distance_fn, epsil
 
         # sample a theta
         theta = prior.sample(rng)
+
         # run simulation on sampled theta
         simulated_data = simulator(theta, rng)
 
