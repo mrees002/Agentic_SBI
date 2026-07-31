@@ -91,6 +91,28 @@ def simulate_linear_regression_unknown_sigma(theta, x, rng):
     mean = intercept + slope * x
     return rng.normal(mean, standard_deviation)
 
+def simulate_normal(mean, std, sample = 100, rng = None):
+    """
+    A simple normal distribution simulator
+
+    Parameters:
+    mean: mean of the distribution
+    std: standard deviation of the distribution
+    sample: sample size of the distribution
+    rng: numPy generator
+
+    Returns:
+    array: simulated output of a normal distribution model
+    """
+
+    if not isinstance(rng, np.random.Generator):
+        raise TypeError("rng must be a numPy generator")
+
+    if std < 0:
+        raise ValueError("Standard Deviation must be greater than or equal to 0")
+
+    return rng.normal(mean, std, sample)
+
 def simulate_exponential_decay(theta, time, noise_sd, rng):
     """
     A simple exponential decay simulator that generates data based on the provided parameters.
