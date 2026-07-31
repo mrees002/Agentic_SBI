@@ -10,6 +10,7 @@ from agent.prompts import (
     ask_simulator_function_name,
     ask_use_config,
     collect_missing_inputs,
+    confirm_missing_rng,
     review_analysis,
     revise_fixed_value,
     revise_prior_bounds,
@@ -115,7 +116,8 @@ def create_agent_interactively():
 
             # analyze agent and ensure values are correct
             analysis = analyze_agent(agent)
-            confirmed_analysis = (review_analysis(analysis))
+            analysis = confirm_missing_rng(analysis)
+            confirmed_analysis = review_analysis(analysis)
             validate_analysis(confirmed_analysis)
 
             # apply changes to agent if needed

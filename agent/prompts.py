@@ -716,3 +716,50 @@ def revise_true_parameter_value(agent, true_values):
     print(f"\nUpdated true value for {name}.")
 
     return True
+
+def confirm_missing_rng(analysis):
+    if analysis["rng_argument"] is not None:
+        return analysis
+
+    while True:
+        response = input(
+            "\nNo RNG argument was detected. "
+            "Does this function have an RNG argument? [y/n]: "
+        ).strip().lower()
+
+        if response in {"y", "yes"}:
+            return ask_rng_argument(analysis)
+
+        if response in {"n", "no"}:
+            analysis["uncertain"].append("The user confirmed that the simulator has no RNG argument.")
+            return analysis
+
+        print("Please enter y or n.")
+
+
+def ask_rng_argument(analysis):
+    available_arguments = [name for name in analysis["arguments"] if name != analysis["parameter_container"]]
+
+    print("\nAvailable simulator arguments:")
+
+    for name in available_arguments:
+        print(f"  {name}")
+
+    while True:
+        name = input("\nEnter the argument used for random-number generation: ").strip()
+
+        if name not in available_arguments:
+            print(f"{name!r} is not an available simulator argument.")
+            continue
+
+        set_analysis_rng_argument(analysis, name)
+        return analysis
+
+def set_analysis_rng_argument(analysis, name):
+    _remove_from_direct_role_lists(analysis, name)
+
+    analysis["fixed_inputs_without_values"] = [value for value in analysis["fixed_inputs_without_values"] if value != name]
+    analysis["rng_argument"] = name
+    analysis["evidence"][name] = ("Classified as the RNG argument after user confirmation.")
+
+    _refresh_inferred_parameters(analysis)
