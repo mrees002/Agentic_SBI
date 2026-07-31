@@ -23,7 +23,6 @@ class SimulatorAgent:
         self.arguments = list(self.signature.parameters)
         self.rng_argument = None
         self.inferred_parameters = []
-        self.parameter_container = None
         self.fixed_values = {}
         self.prior_bounds = {}
 
@@ -82,13 +81,6 @@ class SimulatorAgent:
         self.n_simulations = n_sims
         return self.n_simulations
     
-    def set_parameter_container(self, param_container):
-        if param_container not in self.arguments:
-            raise ValueError(f"{param_container} not in function arguments.")
-        
-        self.parameter_container = param_container
-        return self.parameter_container
-    
     def set_rng_argument(self, rng_argument):
         if rng_argument not in self.arguments:
             raise ValueError(f"{rng_argument} not in function arguments.")
@@ -111,7 +103,7 @@ class SimulatorAgent:
         for name, value in values.items():
             if name not in self.arguments:
                 raise ValueError(f"{name} not in function arguments.")
-            if self.parameter_container is None and name in self.inferred_parameters:
+            if name in self.inferred_parameters:
                 raise ValueError(f"{name} is already an inferred parameter.")
 
             new_fixed_values[name] = value
@@ -122,19 +114,14 @@ class SimulatorAgent:
     def set_inferred_parameters(self, *parameter_names):
         new_inferred_parameters = []
 
-        if self.parameter_container is not None:
-            for param in parameter_names:
-                new_inferred_parameters.append(param)
+        for name in parameter_names:
+            if name not in self.arguments:
+                raise ValueError(f"{name} not in function arguments.")
 
-        else:
-            for param in parameter_names:
-                if param not in self.arguments:
-                    raise ValueError(f"{param} not in function arguments.")
-                
-                else:
-                    new_inferred_parameters.append(param)
+            new_inferred_parameters.append(name)
 
-        self.inferred_parameters = new_inferred_parameters
+        self.inferred_parameters = (new_inferred_parameters)
+
         return self.inferred_parameters
 
     def set_prior_bounds(self, **values):
@@ -175,7 +162,6 @@ class SimulatorAgent:
             output_path=output_path,
             simulator_name=self.simulator.__name__,
             simulator_path=self.simulator_path,
-            parameter_container=self.parameter_container,
             rng_argument=self.rng_argument,
             inferred_parameters=self.inferred_parameters,
             fixed_values=literal_fixed_values,
@@ -194,7 +180,6 @@ class SimulatorAgent:
     def configure_from_file(self, config_path):
         raw_config, settings = load_config(config_path)
 
-        self.parameter_container = settings["parameter_container"]
         self.rng_argument = settings["rng_argument"]
         self.inferred_parameters = settings["inferred_parameters"]
         self.prior_bounds = settings["prior_bounds"]
@@ -215,31 +200,19 @@ class SimulatorAgent:
 
         return self.config
 
-    def build_wrapper(self): # requires that all or no inferred parameters are in theta
-        if self.parameter_container is not None:
+    def build_wrapper(self):
+        def wrapper(theta, rng):
+            arguments = {}
 
-            def wrapper(theta, rng):
-                arguments = {self.parameter_container: theta, **self.fixed_values}
+            for name in self.inferred_parameters:
+                arguments[name] = theta[name]
 
-                if self.rng_argument is not None:
-                    arguments[self.rng_argument] = rng
+            arguments.update(self.fixed_values)
 
-                return self.simulator(**arguments)
+            if self.rng_argument is not None:
+                arguments[self.rng_argument] = rng
 
-        else:
-
-            def wrapper(theta, rng):
-                arguments = {}
-
-                for name in self.inferred_parameters:
-                    arguments[name] = theta[name]
-
-                arguments.update(self.fixed_values)
-
-                if self.rng_argument is not None:
-                    arguments[self.rng_argument] = rng
-
-                return self.simulator(**arguments)
+            return self.simulator(**arguments)
 
         self.wrapper = wrapper
         return self.wrapper
@@ -518,9 +491,6 @@ class SimulatorAgent:
             missing["inferred_parameters"] = True
 
         expected_fixed = set(self.arguments)
-
-        if self.parameter_container is not None:
-            expected_fixed.discard(self.parameter_container)
 
         if self.rng_argument is not None:
             expected_fixed.discard(self.rng_argument)

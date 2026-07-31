@@ -4,7 +4,7 @@ from pathlib import Path
 
 from agent.serialization import make_json_safe
 
-def create_config(output_path, simulator_name, simulator_path, parameter_container,
+def create_config(output_path, simulator_name, simulator_path,
     rng_argument, inferred_parameters, fixed_values, fixed_value_path, prior_bounds,
     observed_data_path, epsilon, n_simulations, random_seed, summary_name, distance_name):
 
@@ -12,7 +12,6 @@ def create_config(output_path, simulator_name, simulator_path, parameter_contain
         "simulator": {
             "name": simulator_name,
             "path": simulator_path,
-            "parameter_container": parameter_container,
             "rng_argument": rng_argument,
         },
         "inference": {
@@ -85,7 +84,6 @@ def normalize_config(config, config_directory):
             observed_data_path = (config_directory / observed_data_path)
 
     normalized = {
-        "parameter_container": simulator_config.get("parameter_container"),
         "rng_argument": simulator_config.get("rng_argument"),
         "inferred_parameters": list(inference_config["inferred_parameters"]),
         "prior_bounds": {

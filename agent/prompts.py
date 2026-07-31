@@ -194,15 +194,6 @@ def _ask_positive_integer(message):
 def display_analysis(analysis):
     print("\nProposed simulator classification:")
     print(f"RNG argument: {analysis['rng_argument']}")
-    print("Parameter container:", analysis["parameter_container"])
-    
-    print("\nParameters inside container:")
-
-    if analysis["container_parameters"]:
-        for name in (analysis["container_parameters"]):
-            print(f"  {name}")
-    else:
-        print("  None")
 
     print("\nFixed values from defaults:")
 
@@ -228,6 +219,12 @@ def display_analysis(analysis):
     else:
         print("  None")
 
+    if analysis["evidence"]:
+        print("\nClassification reasons:")
+
+        for name, explanation in analysis["evidence"].items():
+            print(f"  {name}: {explanation}")
+
     if analysis["uncertain"]:
         print("\nWarnings:")
 
@@ -249,15 +246,6 @@ def review_analysis(analysis):
         correct_analysis(analysis)
 
 def correct_analysis(analysis):
-    if (analysis["parameter_container"] is not None):
-        print("\nThis simulator uses a parameter container.")
-        print(
-            "Under the current project scope, parameters inside the container are "
-            "inferred and all other top-level arguments are fixed."
-        )
-        print("Those roles cannot be moved without changing the simulator wrapper.")
-        print("Review the warnings or simulator definition if the proposal is wrong.")
-        return
 
     movable_names = sorted(set(analysis["fixed_values"]) | 
                            set(analysis["fixed_inputs_without_values"]) |
@@ -305,9 +293,6 @@ def get_analysis_category(analysis, name):
     if name in analysis["direct_inferred_parameters"]:
         return "direct inferred parameter"
 
-    if name in analysis["container_parameters"]:
-        return "parameter inside container"
-
     return None
 
 def move_to_fixed_input(analysis, name):
@@ -348,8 +333,7 @@ def _remove_from_direct_role_lists(analysis, name):
             analysis[category].remove(name)
 
 def _refresh_inferred_parameters(analysis):
-    combined = (list(analysis["container_parameters"]) + list(analysis["direct_inferred_parameters"]))
-    analysis["inferred_parameters"] = (list(dict.fromkeys(combined)))
+    analysis["inferred_parameters"] = list(analysis["direct_inferred_parameters"])
 
 def collect_missing_inputs(agent):
     missing = agent.get_missing_fields()
@@ -738,8 +722,7 @@ def confirm_missing_rng(analysis):
 
 
 def ask_rng_argument(analysis):
-    available_arguments = [name for name in analysis["arguments"] if name != analysis["parameter_container"]]
-
+    available_arguments = list(analysis["arguments"])
     print("\nAvailable simulator arguments:")
 
     for name in available_arguments:
