@@ -5,7 +5,8 @@ def simulate_linear_regression(slope, intercept, x, sd, rng):
     A simple linear regression simulator that generates data based on the provided parameters.
 
     Parameters: 
-    theta: dictionary of parameters with keys 'intercept' and 'slope'
+    slope: slope of the regression simulator
+    intercept: intercept of the regression simulator
     x: array of input data
     sd: standard deviation of the Gaussian noise to be added to the output
     rng: numPy generator
@@ -14,11 +15,13 @@ def simulate_linear_regression(slope, intercept, x, sd, rng):
     array: simulated output based on linear model with gaussian noise
     """
 
+    x = np.asarray(x)
+
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a numPy generator")
 
     if sd < 0:
-        raise ValueError("Standard Deviation must be greater than or equal to 0")
+        raise ValueError("Standard Deviation must be greater than 0")
     
     mean = intercept + slope * x
     return rng.normal(mean, sd)
@@ -41,7 +44,7 @@ def simulate_normal(mean, std, sample = 100, rng = None):
         raise TypeError("rng must be a numPy generator")
 
     if std < 0:
-        raise ValueError("Standard Deviation must be greater than or equal to 0")
+        raise ValueError("Standard Deviation must be greater than 0")
 
     return rng.normal(mean, std, sample)
 
@@ -50,7 +53,8 @@ def simulate_exponential_decay(initial_value, decay_rate, time, sd, rng):
     A simple exponential decay simulator that generates data based on the provided parameters.
 
     Parameters: 
-    theta: dictionary of parameters with keys 'initial_amplitude' and 'decay_rate'
+    intial_value: initial value of the simulator
+    decay_rate: decay rate of the simulator
     time: array of input data
     sd: standard deviation of the Gaussian noise to be added to the output
     rng: numPy generator
@@ -59,8 +63,13 @@ def simulate_exponential_decay(initial_value, decay_rate, time, sd, rng):
     array: simulated output based on exponential decay model with gaussian noise
     """
 
+    time = np.asarray(time)
+
     if not isinstance(rng, np.random.Generator):
         raise TypeError("rng must be a numPy generator")
+
+    if sd < 0:
+        raise ValueError("Standard Deviation must be greater than 0")
 
     # get mean
     mean = initial_value * np.exp(-decay_rate * time)
